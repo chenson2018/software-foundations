@@ -1027,7 +1027,16 @@ Theorem All_In :
     (forall x, In x l -> P x) <->
     All P l.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros T P l.
+  induction l as [|h l' IHl].
+  - simpl. split.
+    + intros. apply I.
+    + intros. exfalso. apply H0.
+  - simpl. split.
+    + intros. split. apply H. left. reflexivity. apply IHl. intros. apply H. right. apply H0.
+    + intros [L R] t [H | H]. rewrite H in L. apply L. rewrite <- IHl in R. apply R. apply H.
+Qed.
+
 (** [] *)
 
 (** **** Exercise: 2 stars, standard, optional (combine_odd_even)
@@ -1038,8 +1047,11 @@ Proof.
     equivalent to [Podd n] when [n] is [odd] and equivalent to [Peven n]
     otherwise. *)
 
-Definition combine_odd_even (Podd Peven : nat -> Prop) : nat -> Prop
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Definition combine_odd_even (Podd Peven : nat -> Prop) : nat -> Prop :=
+(
+fun n => if (odd n) then Podd n else Peven n
+)
+.
 
 (** To test your definition, prove the following facts: *)
 
@@ -1049,7 +1061,14 @@ Theorem combine_odd_even_intro :
     (odd n = false -> Peven n) ->
     combine_odd_even Podd Peven n.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  induction n as [|n' IH].
+  - apply H0. reflexivity.
+  - unfold combine_odd_even.
+    destruct (odd (S n')) eqn:E.
+    + apply H. reflexivity.
+    + apply H0. reflexivity.
+Qed.
 
 Theorem combine_odd_even_elim_odd :
   forall (Podd Peven : nat -> Prop) (n : nat),
@@ -1057,7 +1076,11 @@ Theorem combine_odd_even_elim_odd :
     odd n = true ->
     Podd n.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  unfold combine_odd_even in H.
+  rewrite H0 in H.
+  apply H.
+Qed.
 
 Theorem combine_odd_even_elim_even :
   forall (Podd Peven : nat -> Prop) (n : nat),
@@ -1065,7 +1088,12 @@ Theorem combine_odd_even_elim_even :
     odd n = false ->
     Peven n.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  unfold combine_odd_even in H.
+  rewrite H0 in H.
+  apply H.
+Qed.
+
 (** [] *)
 
 (* ################################################################# *)
