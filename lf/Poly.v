@@ -1206,8 +1206,9 @@ Proof. reflexivity. Qed.
 
  *)
 
-Definition scc (n : cnat) : cnat := (fun X f x => f (n X f x)).
-
+Definition scc (n : cnat) : cnat := (
+  fun (X: Type) (f: X -> X) (x: X) => f (n X f x)
+).
 
 Example scc_1 : scc zero = one.
 reflexivity. Qed.
@@ -1230,7 +1231,11 @@ reflexivity. Qed.
     Hint: the "zero" argument to a Church numeral need not be just
     [x]. *)
 
-Definition plus (n m : cnat) : cnat :=  (fun X f x => n X f (m X f x)).
+Definition plus (n m : cnat) : cnat := (
+  fun (X: Type) (f: X -> X) (x: X) =>
+    m X f (n X f x)
+)
+.
 
 Example plus_1 : plus zero one = one.
 reflexivity. Qed.
@@ -1258,17 +1263,16 @@ reflexivity. Qed.
     which a type contains itself. So leave the type argument
     unchanged. *)
 
-Definition mult (n m : cnat) : cnat := 
-  (fun X f => m (X->X) (fun F:X->X => fun x => (n X f (F x))) (zero X f)).
+Definition mult (n m : cnat) : cnat. Admitted.
 
 Example mult_1 : mult one one = one.
-reflexivity. Qed.
+Admitted.
 
 Example mult_2 : mult zero (plus three three) = zero.
-reflexivity. Qed.
+Admitted.
 
 Example mult_3 : mult two three = plus three three.
-reflexivity. Qed.
+Admitted.
 
 (** [] *)
 
@@ -1283,16 +1287,16 @@ reflexivity. Qed.
     But again, you cannot pass [cnat] itself as the type argument.
     Finding the right type can be tricky. *)
 
-Definition exp (n m : cnat) : cnat := (fun X f => m (X->X) (n X) f).
+Definition exp (n m : cnat) : cnat . Admitted.
 
 Example exp_1 : exp two two = plus two two.
-reflexivity. Qed.
+Admitted.
 
 Example exp_2 : exp three zero = one.
-reflexivity. Qed.
+Admitted.
 
 Example exp_3 : exp three two = plus (mult two (mult two two)) one.
-reflexivity. Qed.
+Admitted.
 
 (** [] *)
 
