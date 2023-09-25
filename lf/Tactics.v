@@ -964,12 +964,40 @@ Fixpoint split {X Y : Type} (l : list (X*Y))
 (** Prove that [split] and [combine] are inverses in the following
     sense: *)
 
+
+Lemma inj_list_hd : forall (X: Type) (t1 t2 : list X) (h1 h2 : X), 
+  h1 :: t1 = h2 :: t2 ->
+  h1 = h2.
+Proof.
+  intros. injection H as H'. apply H'.
+Qed.
+
+
+Lemma inj_list_tl : forall (X: Type) (t1 t2 : list X) (h1 h2 : X), 
+  h1 :: t1 = h2 :: t2 ->
+  t1 = t2.
+Proof.
+  intros. injection H as H'. apply H.
+Qed.
+
 Theorem combine_split : forall X Y (l : list (X * Y)) l1 l2,
   split l = (l1, l2) ->
   combine l1 l2 = l.
 Proof.
-Admitted.
-
+  intros X Y l.
+  induction l as [|hd l' IH].
+  - intros [|h1] [|h2].
+    + simpl. reflexivity.
+    + simpl. reflexivity.
+    + simpl. reflexivity.
+    + simpl. intros. injection H as H'. discriminate.
+  - intros [|h1] [|h2].
+    + simpl. destruct hd. destruct (split l'). intros. discriminate.
+    + simpl. destruct hd. destruct (split l'). intros. discriminate.
+    + simpl. destruct hd. destruct (split l'). intros. discriminate.
+    + simpl. destruct hd. destruct (split l'). intros. 
+Admitted.      
+      
 
 (** [] *)
 
