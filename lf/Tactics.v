@@ -984,20 +984,22 @@ Theorem combine_split : forall X Y (l : list (X * Y)) l1 l2,
   split l = (l1, l2) ->
   combine l1 l2 = l.
 Proof.
-  intros X Y l.
+   intros X Y l.
   induction l as [|hd l' IH].
-  - intros [|h1] [|h2].
-    + simpl. reflexivity.
-    + simpl. reflexivity.
-    + simpl. reflexivity.
-    + simpl. intros. injection H as H'. discriminate.
-  - intros [|h1] [|h2].
-    + simpl. destruct hd. destruct (split l'). intros. discriminate.
-    + simpl. destruct hd. destruct (split l'). intros. discriminate.
-    + simpl. destruct hd. destruct (split l'). intros. discriminate.
-    + simpl. destruct hd. destruct (split l'). intros. 
-Admitted.      
-      
+  - intros [|h1] [|h2]; try reflexivity.
+    + intros. injection H as H'. discriminate.
+  - intros [|h1] [|h2]
+     ; simpl
+     ; destruct hd
+     ; destruct (split l')
+     ; intros 
+     ; try discriminate
+    .
+    + inversion H.
+      rewrite IH.
+        * reflexivity.
+        * rewrite H2. rewrite H4. reflexivity.
+Qed.
 
 (** [] *)
 
@@ -1230,10 +1232,12 @@ Qed.
     Your property will need to account for the behavior of [combine]
     in its base cases, which possibly drop some list elements. *)
 
-Definition split_combine_statement : Prop
+Definition split_combine_statement : Prop :=
   (* ("[: Prop]" means that we are giving a name to a
      logical proposition here.) *)
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+forall X Y (l : list (X * Y)) l1 l2,
+  combine l1 l2 = l ->
+  split l = (l1, l2).
 
 Theorem split_combine : split_combine_statement.
 Proof.
