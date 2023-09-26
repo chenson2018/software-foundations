@@ -1656,12 +1656,23 @@ Qed.
 Theorem andb_true_iff : forall b1 b2:bool,
   b1 && b2 = true <-> b1 = true /\ b2 = true.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros [] [].
+  - simpl. split. intros. split. apply H. apply H. split.
+  - simpl. split. intros. inversion H. intros. inversion H. apply H1.
+  - simpl. split. intros. inversion H. intros. inversion H. apply H0.
+  - simpl. split. intros. inversion H. intros. inversion H. apply H0.
+Qed.
 
 Theorem orb_true_iff : forall b1 b2,
   b1 || b2 = true <-> b1 = true \/ b2 = true.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros [] [].
+  - simpl. split. intros. left. apply H. intros. destruct H. apply H. apply H.
+  - simpl. split. intros. left. apply H. intros. destruct H. apply H. inversion H.
+  - simpl. split. intros. right. apply H. intros. destruct H. inversion H. apply H.
+  - simpl. split. intros. left. apply H. intros. destruct H. apply H. apply H.
+Qed.
+
 (** [] *)
 
 (** **** Exercise: 1 star, standard (eqb_neq)
@@ -1673,8 +1684,34 @@ Proof.
 Theorem eqb_neq : forall x y : nat,
   x =? y = false <-> x <> y.
 Proof.
-  (* FILL IN HERE *) Admitted.
-(** [] *)
+  intros x.
+  induction x as [|x' IH].
+  - intros [].
+    split.
+    + intros. inversion H.
+    + intros. exfalso. apply H. reflexivity.
+    + split.
+      * discriminate.
+      * unfold not. simpl. intros. reflexivity.
+  - intros [].
+    + unfold not. simpl. split.
+      intros.
+      inversion H0.
+      intros. reflexivity.
+    + unfold not. simpl. rewrite IH. unfold not. split.
+      intros. injection  H0. apply H.
+      intros. apply H. rewrite <- H0. reflexivity.
+Qed.
+
+(* a shorter version without induction *)
+
+Theorem eqb_neq' : forall x y : nat,
+  (x =? y) = false <-> x <> y.
+Proof. 
+  intros. rewrite <- not_true_iff_false. split.
+    - intros H1 H2. rewrite H2 in H1. rewrite eq_self in H1. apply H1. reflexivity.
+    - intros H1 H2. apply H1. apply eqb_eq. apply H2.
+Qed.
 
 (** **** Exercise: 3 stars, standard (eqb_list)
 
@@ -1685,15 +1722,19 @@ Proof.
     definition is correct, prove the lemma [eqb_list_true_iff]. *)
 
 Fixpoint eqb_list {A : Type} (eqb : A -> A -> bool)
-                  (l1 l2 : list A) : bool
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+                  (l1 l2 : list A) : bool :=
+  match l1, l2 with
+  | [], [] => true
+  | [], _::_ | _::_, [] => false
+  | h1 :: t1, h2 :: t2 => andb (eqb h1 h2) (eqb_list eqb t1 t2)
+  end.
 
 Theorem eqb_list_true_iff :
   forall A (eqb : A -> A -> bool),
     (forall a1 a2, eqb a1 a2 = true <-> a1 = a2) ->
     forall l1 l2, eqb_list eqb l1 l2 = true <-> l1 = l2.
 Proof.
-(* FILL IN HERE *) Admitted.
+Admitted.
 
 (** [] *)
 
