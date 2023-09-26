@@ -964,22 +964,6 @@ Fixpoint split {X Y : Type} (l : list (X*Y))
 (** Prove that [split] and [combine] are inverses in the following
     sense: *)
 
-
-Lemma inj_list_hd : forall (X: Type) (t1 t2 : list X) (h1 h2 : X), 
-  h1 :: t1 = h2 :: t2 ->
-  h1 = h2.
-Proof.
-  intros. injection H as H'. apply H'.
-Qed.
-
-
-Lemma inj_list_tl : forall (X: Type) (t1 t2 : list X) (h1 h2 : X), 
-  h1 :: t1 = h2 :: t2 ->
-  t1 = t2.
-Proof.
-  intros. injection H as H'. apply H.
-Qed.
-
 Theorem combine_split : forall X Y (l : list (X * Y)) l1 l2,
   split l = (l1, l2) ->
   combine l1 l2 = l.
@@ -1232,16 +1216,27 @@ Qed.
     Your property will need to account for the behavior of [combine]
     in its base cases, which possibly drop some list elements. *)
 
+Compute combine [1; 2; 3] [4].
+
 Definition split_combine_statement : Prop :=
   (* ("[: Prop]" means that we are giving a name to a
      logical proposition here.) *)
-forall X Y (l : list (X * Y)) l1 l2,
-  combine l1 l2 = l ->
-  split l = (l1, l2).
+forall X Y (l1: list X) (l2: list Y),
+    length l1 = length l2 -> 
+    split (combine l1 l2) = (l1,l2).
 
 Theorem split_combine : split_combine_statement.
 Proof.
-(* FILL IN HERE *) Admitted.
+  unfold split_combine_statement.
+  intros X Y l.
+  induction l as [|hd l' IH].
+  - intros [|h2 l2].
+    + reflexivity.
+    + intros. inversion H.
+  - intros [|h2 l2] H.
+    + inversion H.
+    + inversion H. apply IH in H1. simpl. rewrite H1. reflexivity.
+Qed.
 
 (* Do not modify the following line: *)
 Definition manual_grade_for_split_combine : option (nat*string) := None.
@@ -1253,7 +1248,15 @@ Theorem filter_exercise : forall (X : Type) (test : X -> bool)
   filter test l = x :: lf ->
   test x = true.
 Proof.
-Admitted.
+  intros X test x l lf.
+  generalize dependent x.
+  induction l as [|hd l' IH].
+    - intros. inversion H.
+    - intros. inversion H.
+      destruct (test hd) eqn:E.
+      + inversion H1. rewrite <- H2. apply E.
+      + apply IH. apply H1.
+Qed.
 
 (** [] *)
 

@@ -10,6 +10,6 @@ The following are complete or parially complete:
 - [Induction.v](lf/Induction.v)
 - [Lists.v](lf/Lists.v)
 - [Poly.v](lf/Poly.v) (partial)
-- [Tactics.v](lf/Tactics.v) (partial)
+- [Tactics.v](lf/Tactics.v)
 - [Logic.v](lf/Logic.v) (partial)
 - [IndProp.v](lf/IndProp.v) (partial)
