@@ -854,11 +854,26 @@ Theorem leb_plus_exists : forall n m, n <=? m = true -> exists x, m = n+x.
   - discriminate.
   - simpl in H. simpl. exists (m' - n'). rewrite add_comm. rewrite subtract_then_add. reflexivity.
     apply leqb_to_leq in H. apply H.
-Qed. 
+Qed.
+
+Lemma plus_leb : forall n m, (n <=? n + m) = true.
+Proof.
+  induction n; destruct m; intros; auto using (PeanoNat.Nat.le_add_r).
+  - rewrite add_0_r. apply leb_refl.
+  - simpl.
+    auto using (PeanoNat.Nat.le_add_r).
+Qed.
 
 Theorem plus_exists_leb : forall n m, (exists x, m = n+x) -> n <=? m = true.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros [|n'] [|m'] H.
+  - reflexivity.
+  - reflexivity.
+  - unfold leb. exfalso. inversion H. simpl in H0. inversion H0.
+  - inversion H. destruct x.
+    + rewrite add_0_r in H0. simpl. injection H0 as H'. rewrite H'. apply leb_refl.
+    + simpl. inversion H0. apply plus_leb.
+Qed.
 
 (** [] *)
 
