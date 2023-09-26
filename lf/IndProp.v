@@ -161,6 +161,17 @@ Inductive Perm3 {X : Type} : list X -> list X -> Prop :=
     According to this definition, is [[1;2;3]] a permutation of
     [[3;2;1]]?  Is [[1;2;3]] a permutation of itself? *)
 
+Theorem rev3_is_perm: forall (X: Type) (a b c: X) (l: list X), l = rev [a; b; c] -> Perm3 [a; b; c] l.
+Proof.
+  intros. simpl in H. rewrite H.
+  apply (perm3_trans [a; b; c] [a; c; b]). apply perm3_swap23.
+  apply (perm3_trans [a; c; b] [c; a; b]). apply perm3_swap12.
+  apply perm3_swap23.
+Qed.
+
+(* I don't think it is a permutation of itself? Not sure how to prove this: *)
+(* Theorem not_perm_self: forall (X: Type) (a b c: X), ~(Perm3 [a;b;c] [a;b;c]). *)
+
 (* FILL IN HERE
 
     [] *)
@@ -282,7 +293,12 @@ Qed.
 Theorem ev_double : forall n,
   ev (double n).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  induction n as [|n' IH].
+  - simpl. apply ev_0.
+  - simpl. apply ev_SS. apply IH.
+Qed.
+
 (** [] *)
 
 (* ################################################################# *)
@@ -402,7 +418,11 @@ Proof.
 Theorem SSSSev__even : forall n,
   ev (S (S (S (S n)))) -> ev n.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. inversion H as [|n' E' H'].
+  inversion E'.
+  apply H1.
+Qed.
+
 (** [] *)
 
 (** **** Exercise: 1 star, standard (ev5_nonsense)
@@ -412,7 +432,12 @@ Proof.
 Theorem ev5_nonsense :
   ev 5 -> 2 + 2 = 9.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. 
+  inversion H as [|n' E' H']. 
+  inversion E' as [|n'' E'' H''].
+  inversion E'' as [|n''' E''' H'''].
+Qed.
+
 (** [] *)
 
 (** The [inversion] tactic does quite a bit of work. For
@@ -576,7 +601,14 @@ Qed.
 (** **** Exercise: 2 stars, standard (ev_sum) *)
 Theorem ev_sum : forall n m, ev n -> ev m -> ev (n + m).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  induction H as [|n' E' IH].
+  - simpl. apply H0.
+  - destruct H0 as [|m' E''].
+    + rewrite add_0_r. apply ev_SS. apply E'.
+    + simpl. apply ev_SS. apply IH.
+Qed.
+
 (** [] *)
 
 (** **** Exercise: 4 stars, advanced, optional (ev'_ev)
@@ -598,7 +630,20 @@ Inductive ev' : nat -> Prop :=
 
 Theorem ev'_ev : forall n, ev' n <-> ev n.
 Proof.
- (* FILL IN HERE *) Admitted.
+  intros. split.
+  - intros.
+    induction H.
+    + apply ev_0.
+    + apply ev_SS. apply ev_0.
+    + apply ev_sum. apply IHev'1. apply IHev'2.
+  - intros.
+    induction H.
+    + apply ev'_0.
+    + rewrite plus_1_r. rewrite plus_1_r. rewrite <- add_assoc. apply ev'_sum.
+      * apply IHev.
+      * apply ev'_2.
+Qed.
+
 (** [] *)
 
 (** **** Exercise: 3 stars, advanced, especially useful (ev_ev__ev) *)
@@ -607,7 +652,16 @@ Theorem ev_ev__ev : forall n m,
   (* Hint: There are two pieces of evidence you could attempt to induct upon
       here. If one doesn't work, try the other. *)
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  induction H0.
+  - apply H.
+  - apply IHev.
+    replace (S (S n) + m) with (S (S (n + m))) in H.
+    apply evSS_ev in H.
+    apply H.
+    reflexivity.
+Qed.
+
 (** [] *)
 
 (** **** Exercise: 3 stars, standard, optional (ev_plus_plus)
@@ -619,7 +673,8 @@ Proof.
 Theorem ev_plus_plus : forall n m p,
   ev (n+m) -> ev (n+p) -> ev (m+p).
 Proof.
-  (* FILL IN HERE *) Admitted.
+Admitted.
+
 (** [] *)
 
 (* ################################################################# *)
@@ -696,12 +751,18 @@ End Playground.
     between every pair of natural numbers. *)
 
 Inductive total_relation : nat -> nat -> Prop :=
-  (* FILL IN HERE *)
+  | total (n m: nat) : total_relation n m
 .
+
+Example total_ex: total_relation 8 66.
+Proof. apply total. Qed.
 
 Theorem total_relation_is_total : forall n m, total_relation n m.
   Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  apply total.
+Qed.
+
 (** [] *)
 
 (** **** Exercise: 2 stars, standard, optional (empty_relation)
@@ -709,13 +770,11 @@ Theorem total_relation_is_total : forall n m, total_relation n m.
     Define an inductive binary relation [empty_relation] (on numbers)
     that never holds. *)
 
-Inductive empty_relation : nat -> nat -> Prop :=
-  (* FILL IN HERE *)
-.
+Inductive empty_relation : nat -> nat -> Prop :=.
 
 Theorem empty_relation_is_empty : forall n m, ~ empty_relation n m.
-  Proof.
-  (* FILL IN HERE *) Admitted.
+Proof. intros _ _ []. Qed.
+
 (** [] *)
 
 (** From the definition of [le], we can sketch the behaviors of
@@ -742,7 +801,7 @@ Proof.
 Theorem O_le_n : forall n,
   0 <= n.
 Proof.
-  (* FILL IN HERE *) Admitted.
+Admitted.
 
 Theorem n_le_m__Sn_le_Sm : forall n m,
   n <= m -> S n <= S m.

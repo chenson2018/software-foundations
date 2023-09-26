@@ -12,3 +12,4 @@ The following are complete or parially complete:
 - [Poly.v](lf/Poly.v) (partial)
 - [Tactics.v](lf/Tactics.v) (partial)
 - [Logic.v](lf/Logic.v) (partial)
+- [IndProp.v](lf/IndProp.v) (partial)
