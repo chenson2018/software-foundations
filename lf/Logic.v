@@ -1907,7 +1907,11 @@ Qed.
 Theorem excluded_middle_irrefutable: forall (P : Prop),
   ~ ~ (P \/ ~ P).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  unfold not.
+  intros. apply H. right. intros. apply H. left. apply H0.
+Qed.
+
 (** [] *)
 
 (** **** Exercise: 3 stars, advanced (not_exists_dist)
@@ -1923,12 +1927,20 @@ Proof.
     in constructive logic. Your job is to show that it is implied by
     the excluded middle. *)
 
+(* TODO write this proof out informally for understanding? *)
+
 Theorem not_exists_dist :
   excluded_middle ->
   forall (X:Type) (P : X -> Prop),
     ~ (exists x, ~ P x) -> (forall x, P x).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold excluded_middle. unfold not.
+  intros.
+  destruct H with (P := (P x)).
+  - apply H1.
+  - exfalso. apply H0. exists x. apply H1.
+Qed.
+
 (** [] *)
 
 (** **** Exercise: 5 stars, standard, optional (classical_axioms)
