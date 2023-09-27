@@ -817,12 +817,20 @@ Proof.
 Theorem O_le_n : forall n,
   0 <= n.
 Proof.
-Admitted.
+  intros.
+  induction n as [|A B].
+  - apply le_n.
+  - apply le_S. apply B.
+Qed.
 
 Theorem n_le_m__Sn_le_Sm : forall n m,
   n <= m -> S n <= S m.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  induction H as [|A B].
+  - reflexivity.
+  - apply le_S. apply IHB.
+Qed.
 
 Theorem Sn_le_Sm__n_le_m : forall n m,
   S n <= S m -> n <= m.
@@ -837,7 +845,12 @@ Proof.
 Theorem le_plus_l : forall a b,
   a <= a + b.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  induction b as [|b' IH].
+  - rewrite add_0_r.
+    reflexivity.
+  - rewrite plus_1_r. rewrite add_assoc. rewrite <- plus_1_r. apply le_S. apply IH.
+Qed.
 
 Theorem plus_le : forall n1 n2 m,
   n1 + n2 <= m ->
@@ -1037,12 +1050,44 @@ End R.
       is a subsequence of [l3], then [l1] is a subsequence of [l3]. *)
 
 Inductive subseq : list nat -> list nat -> Prop :=
-(* FILL IN HERE *)
+  | subseq_empty : subseq [] []
+  | subseq_match   l1 l2 (rm: nat) (H: subseq l1 l2) : subseq (rm :: l1) (rm :: l2)
+  | subseq_discard l1 l2 (rm: nat) (H: subseq l1 l2) : subseq (      l1) (rm :: l2)
 .
+
+Example subseq_ex' : subseq [1; 2; 3] [1; 2; 3].
+Proof. 
+  apply subseq_match.
+  apply subseq_match.
+  apply subseq_match.
+  apply subseq_empty.
+Qed.
+
+Example subseq_ex'' : subseq [1; 2; 3] [1;1;1;2;2;3].
+Proof. 
+  apply subseq_match.
+  apply subseq_discard.
+  apply subseq_discard.
+  apply subseq_match.
+  apply subseq_discard.
+  apply subseq_match.
+  apply subseq_empty.
+Qed.
 
 Theorem subseq_refl : forall (l : list nat), subseq l l.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros l.
+  induction l as [|h t IH].
+  - apply subseq_empty.
+  - apply subseq_match. apply IH.
+Qed.    
+
+Lemma subseq_discard_tl: forall l, subseq [] l.
+Proof.
+  induction l as [|h t IH].
+  - apply subseq_empty.
+  - apply subseq_discard. apply IH.
+Qed.
 
 Theorem subseq_app : forall (l1 l2 l3 : list nat),
   subseq l1 l2 ->
