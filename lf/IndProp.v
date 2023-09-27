@@ -673,7 +673,23 @@ Qed.
 Theorem ev_plus_plus : forall n m p,
   ev (n+m) -> ev (n+p) -> ev (m+p).
 Proof.
-Admitted.
+  intros.
+  apply (ev_sum (n + p)) in H.
+  replace (n + p + (n + m)) with ((n + n) + (m + p)) in H.
+  apply (ev_ev__ev (n + n) (m + p)) in H.
+  apply H.
+  rewrite <- double_plus. apply ev_double.
+  (* annoying... but bringing in the ring tactic causes problems *)
+    rewrite (add_comm m p).
+    rewrite add_assoc.
+    rewrite <- (add_assoc n n p).
+    rewrite (add_comm n p).
+    rewrite add_assoc.
+    rewrite (add_comm n p).
+    rewrite add_assoc.
+    reflexivity.
+  apply H0.
+Qed.
 
 (** [] *)
 
