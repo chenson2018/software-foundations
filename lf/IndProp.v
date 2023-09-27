@@ -948,12 +948,54 @@ Definition manual_grade_for_R_provability : option (nat*string) := None.
     Figure out which function; then state and prove this equivalence
     in Coq. *)
 
-Definition fR : nat -> nat -> nat
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Definition fR : nat -> nat -> nat := plus.
 
 Theorem R_equiv_fR : forall m n o, R m n o <-> fR m n = o.
-Proof.
-(* FILL IN HERE *) Admitted.
+  unfold fR.
+  split.
+    - intros.
+      induction H as [IH | IH | IH | IH | IH].
+      + reflexivity.
+      + rewrite plus_1_r. rewrite <- add_assoc. rewrite (add_comm 1 _). rewrite add_assoc.
+        rewrite IHR. rewrite <- plus_1_r. reflexivity.
+      + rewrite plus_1_r. rewrite add_assoc. rewrite IHR. rewrite <- plus_1_r. reflexivity.
+      + inversion IHR. 
+          rewrite plus_1_r in H1. 
+          rewrite add_assoc in H1.
+          rewrite <- plus_1_r in H1.
+        inversion H1. reflexivity.
+      + rewrite add_comm in IHR. apply IHR.
+    - generalize dependent m.
+      generalize dependent n.
+      induction o as [|o' IH].
+      + intros.
+        apply and_exercise in H.
+        destruct H.
+        rewrite H. rewrite H0.
+        apply c1.
+      + intros [|m'] [|n'].
+        * intros. inversion H.
+        * intros. 
+          rewrite add_0_r in H. 
+          rewrite H. 
+          apply c2. apply IH. rewrite add_0_r. reflexivity.
+        * intros. 
+          simpl in H.
+          rewrite H.
+          apply c3.
+          apply IH.
+          reflexivity.
+        * intros. 
+          apply c3.
+          apply IH.
+          inversion H.
+          rewrite plus_1_r.
+          rewrite <- add_assoc.
+          rewrite (add_comm 1 _).
+          rewrite <- plus_1_r.
+          reflexivity.
+Qed.
+
 (** [] *)
 
 End R.
