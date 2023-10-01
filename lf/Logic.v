@@ -1491,8 +1491,15 @@ Qed.
 Lemma even_double_conv : forall n, exists k,
   n = if even n then double k else S (double k).
 Proof.
-  (* Hint: Use the [even_S] lemma from [Induction.v]. *)
-  (* FILL IN HERE *) Admitted.
+  intros.
+  induction n as [|n' IH].
+  - simpl. exists 0. reflexivity.
+  - destruct IH.
+    rewrite even_S.
+    destruct (even n').
+    + simpl. rewrite H. exists x. reflexivity.
+    + simpl. rewrite H. exists (S x). simpl. reflexivity.
+Qed.      
 (** [] *)
 
 (** Now the main theorem: *)
