@@ -836,8 +836,6 @@ Qed.
 
 (** [] *)
 
-Search minus.
-
 
 (** **** Exercise: 3 stars, standard, optional (leb_plus_exists) *)
 
@@ -849,10 +847,10 @@ Theorem leb_plus_exists : forall n m, n <=? m = true -> exists x, m = n+x.
   - intros [|m'].
     + discriminate.
     + intros. 
-      apply IH in H. 
+      apply IH in H.
       induction H as [A B]. 
-      exists A. 
-      inversion B. 
+      exists A.
+      inversion B.
       reflexivity.
 Qed.
 
@@ -1434,9 +1432,36 @@ Definition tr_rev {X} (l : list X) : list X :=
 
     Prove that the two definitions are indeed equivalent. *)
 
+(* 
+   thanks to https://github.com/kolya-vasiliev/logical-foundations-2018/blob/master/Logic.v
+   for this lemma
+*)
+
+Lemma tr_rev_app: forall X (l l1 l2:list X),
+  rev_append l (l1 ++ l2) = (rev_append l l1) ++ l2.
+Proof.
+  intros X l.
+  induction l as [|h t IH].
+  - reflexivity.
+  - intros. simpl.
+    replace (h :: l1 ++ l2) with ((h :: l1) ++ l2).
+    apply IH.
+    reflexivity.
+Qed.
+
 Theorem tr_rev_correct : forall X, @tr_rev X = @rev X.
 Proof.
-(* FILL IN HERE *) Admitted.
+  intros.
+  apply functional_extensionality.
+  intros l.
+  induction l as [|h t IH].
+  - reflexivity.
+  - simpl. rewrite <- IH. unfold tr_rev. simpl. unfold tr_rev in IH. rewrite IH.
+    replace (rev_append t [h]) with (rev_append t [ ] ++ [h]).
+    + rewrite IH. reflexivity.
+    + symmetry. apply (tr_rev_app _ _ [] _).
+Qed.
+    
 (** [] *)
 
 (* ================================================================= *)
@@ -1763,7 +1788,34 @@ Theorem eqb_list_true_iff :
     (forall a1 a2, eqb a1 a2 = true <-> a1 = a2) ->
     forall l1 l2, eqb_list eqb l1 l2 = true <-> l1 = l2.
 Proof.
-Admitted.
+  intros A eqb H l1.
+  induction l1 as [|h1 t1 IH].
+  - intros. split.
+    + destruct l2.
+      * intros. reflexivity.
+      * simpl. intros. inversion H0.
+    + simpl. intros. rewrite <- H0. reflexivity.
+  - intros. split.
+    + simpl. destruct l2.
+      * intros. inversion H0.
+        (* Note that:
+             eqb h1 x && eqb_list eqb t1 l2 = true
+           has order:
+             (eqb h1 x && eqb_list eqb t1 l2) = true
+        *)
+      * intros. rewrite andb_true_iff in H0.
+        destruct H0. 
+        apply H in H0.
+        apply IH in H1.
+        rewrite H0.
+        rewrite H1.
+        reflexivity.
+    + intros. destruct l2.
+      * simpl. inversion H0.
+      * simpl. apply andb_true_iff. split.
+        ** inversion H0. apply H. reflexivity.
+        ** inversion H0. inversion H3. apply IH in H1. rewrite H3 in H1. apply H1.
+Qed.           
 
 (** [] *)
 
@@ -2000,8 +2052,68 @@ Definition de_morgan_not_and_not := forall P Q:Prop,
 Definition implies_to_or := forall P Q:Prop,
   (P -> Q) -> (~P \/ Q).
 
-(* FILL IN HERE
 
-    [] *)
+Theorem em_to_pierce: excluded_middle -> peirce.
+Proof.
+  unfold excluded_middle.
+  unfold peirce.
+  unfold not.
+  intros.
+  destruct (H (P \/ (P -> False))).
+  - destruct H1.
+    + apply H1.
+    + apply H0. intros. exfalso. apply H1. apply H2.
+  - apply H1 in H. exfalso. apply H.
+Qed.    
+
+Theorem pierce_to_dne: peirce -> double_negation_elimination.
+Proof.
+  unfold peirce.
+  unfold double_negation_elimination.
+  unfold not.
+  intros.
+  apply (H P False).
+  intros.
+  apply H0 in H1.
+  exfalso. apply H1.
+Qed.  
+
+Theorem dne_to_dm: double_negation_elimination -> de_morgan_not_and_not.
+Proof.
+  unfold double_negation_elimination.
+  unfold de_morgan_not_and_not.
+  unfold not.
+  intros.
+  apply H.
+  intros.
+  destruct H0.
+  split.
+  - intros. apply H1. left. apply H0.
+  - intros. apply H1. right. apply H0.
+Qed.    
+
+Theorem dm_to_ito: de_morgan_not_and_not -> implies_to_or.
+Proof.
+  unfold de_morgan_not_and_not.
+  unfold implies_to_or.
+  unfold not.
+  intros.
+  apply H. intros.
+  destruct H1.
+  apply H1. intros.
+  apply H2. apply H0. apply H3.
+Qed.
+
+Theorem ito_to_em: implies_to_or -> excluded_middle.
+Proof.
+  unfold implies_to_or.
+  unfold excluded_middle.
+  unfold not.
+  intros.
+  rewrite or_comm.
+  apply H.
+  intros.
+  apply H0.
+Qed.
 
 (* 2023-08-23 11:29 *)

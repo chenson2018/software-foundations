@@ -11,5 +11,5 @@ The following are complete or parially complete:
 - [Lists.v](lf/Lists.v)
 - [Poly.v](lf/Poly.v) (partial)
 - [Tactics.v](lf/Tactics.v)
-- [Logic.v](lf/Logic.v) (partial)
+- [Logic.v](lf/Logic.v)
 - [IndProp.v](lf/IndProp.v) (partial)
