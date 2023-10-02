@@ -812,7 +812,12 @@ Proof. intros _ _ []. Qed.
 (** **** Exercise: 5 stars, standard, optional (le_and_lt_facts) *)
 Lemma le_trans : forall m n o, m <= n -> n <= o -> m <= o.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros m n o [|A B].
+  - intros. apply H.
+  - intros. induction H as [|C D].
+    + apply le_S. apply B.
+    + apply le_S. apply IHD.
+Qed.
 
 Theorem O_le_n : forall n,
   0 <= n.
