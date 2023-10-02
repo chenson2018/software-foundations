@@ -838,6 +838,26 @@ Qed.
 
 Search minus.
 
+
+(** **** Exercise: 3 stars, standard, optional (leb_plus_exists) *)
+
+(* Comparing these two solutions is interesting. *)
+
+Theorem leb_plus_exists : forall n m, n <=? m = true -> exists x, m = n+x.
+  induction n as [|n' IH].
+  - intros. exists m. reflexivity.
+  - intros [|m'].
+    + discriminate.
+    + intros. 
+      apply IH in H. 
+      induction H as [A B]. 
+      exists A. 
+      inversion B. 
+      reflexivity.
+Qed.
+
+(* Leaving these Lemmas unproven, this is just to contrast with the proof above *)
+
 Lemma subtract_then_add: forall m n, n <= m -> m - n + n = m.
 Proof.
 Admitted.
@@ -846,14 +866,16 @@ Lemma leqb_to_leq: forall n m, (n <=? m) = true -> n <= m.
 Proof.
 Admitted.
 
-(** **** Exercise: 3 stars, standard, optional (leb_plus_exists) *)
-Theorem leb_plus_exists : forall n m, n <=? m = true -> exists x, m = n+x.
+Theorem leb_plus_exists' : forall n m, n <=? m = true -> exists x, m = n+x.
   intros [|n'] [|m'] H.
   - exists 0. reflexivity.
   - exists (S m'). reflexivity.
   - discriminate.
-  - simpl in H. simpl. exists (m' - n'). rewrite add_comm. rewrite subtract_then_add. reflexivity.
-    apply leqb_to_leq in H. apply H.
+  - simpl in H. simpl. 
+    exists (m' - n'). 
+    rewrite add_comm. rewrite subtract_then_add. 
+    + reflexivity.
+    + apply leqb_to_leq in H. apply H.
 Qed.
 
 Lemma plus_leb : forall n m, (n <=? n + m) = true.
