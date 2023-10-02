@@ -1862,8 +1862,17 @@ Qed.
 (** **** Exercise: 2 stars, standard, especially useful (reflect_iff) *)
 Theorem reflect_iff : forall P b, reflect P b -> (P <-> b = true).
 Proof.
-  (* FILL IN HERE *) Admitted.
-(** [] *)
+  intros.
+  destruct b eqn:E.
+  - split.
+    + intros. reflexivity.
+    + intros. rewrite <- E in H. destruct H. apply H. inversion E.
+  - split.
+    + intros. destruct H. reflexivity. exfalso. apply H. apply H0.
+    + intros. inversion H0.
+Qed.
+
+  (** [] *)
 
 (** We can think of [reflect] as a kind of variant of the usual "if
     and only if" connective; the advantage of [reflect] is that, by
@@ -1917,11 +1926,29 @@ Fixpoint count n l :=
   | m :: l' => (if n =? m then 1 else 0) + count n l'
   end.
 
+(* TODO solve as intended with eqbP ... *)
+
 Theorem eqbP_practice : forall n l,
   count n l = 0 -> ~(In n l).
 Proof.
   intros n l Hcount. induction l as [| m l' IHl'].
-  (* FILL IN HERE *) Admitted.
+  + simpl. unfold not. intros. apply H.
+  + unfold not. intros. simpl in H. destruct H.
+    * apply IHl'.
+      ** rewrite H in Hcount. simpl in Hcount. 
+         replace (n =? n) with true in Hcount.
+         inversion Hcount.
+         rewrite eqb_refl.
+         reflexivity.
+      ** rewrite H in Hcount. simpl in Hcount. rewrite eqb_refl in Hcount. 
+         unfold not in IHl'. inversion Hcount.
+    * unfold not in IHl'. exfalso. apply IHl'. simpl in Hcount.
+      destruct (n =? m) eqn:E.
+      ** inversion Hcount.
+      ** rewrite <- Hcount. reflexivity.
+      ** apply H.
+Qed.
+
 (** [] *)
 
 (** This small example shows reflection giving us a small gain in
@@ -1954,7 +1981,9 @@ Proof.
     [nostutter]. *)
 
 Inductive nostutter {X:Type} : list X -> Prop :=
- (* FILL IN HERE *)
+  | empty_stut : nostutter []
+  | one_stut (x: X) : nostutter [ x ]
+  | app_stut (x h: X) (t : list X) (H: nostutter (h :: t)) : x <> h -> nostutter (x :: h :: t)
 .
 (** Make sure each of these tests succeeds, but feel free to change
     the suggested proof (in comments) if the given one doesn't work
@@ -1967,34 +1996,22 @@ Inductive nostutter {X:Type} : list X -> Prop :=
     example with more basic tactics.)  *)
 
 Example test_nostutter_1: nostutter [3;1;4;1;5;6].
-(* FILL IN HERE *) Admitted.
-(* 
   Proof. repeat constructor; apply eqb_neq; auto.
   Qed.
-*)
 
 Example test_nostutter_2:  nostutter (@nil nat).
-(* FILL IN HERE *) Admitted.
-(* 
   Proof. repeat constructor; apply eqb_neq; auto.
   Qed.
-*)
 
 Example test_nostutter_3:  nostutter [5].
-(* FILL IN HERE *) Admitted.
-(* 
   Proof. repeat constructor; auto. Qed.
-*)
 
 Example test_nostutter_4:      not (nostutter [3;1;1;4]).
-(* FILL IN HERE *) Admitted.
-(* 
   Proof. intro.
   repeat match goal with
     h: nostutter _ |- _ => inversion h; clear h; subst
   end.
   contradiction; auto. Qed.
-*)
 
 (* Do not modify the following line: *)
 Definition manual_grade_for_nostutter : option (nat*string) := None.
@@ -2030,8 +2047,20 @@ Definition manual_grade_for_nostutter : option (nat*string) := None.
     others.  Do this with an inductive relation, not a [Fixpoint].  *)
 
 Inductive merge {X:Type} : list X -> list X -> list X -> Prop :=
-(* FILL IN HERE *)
+  | merge_l (h rh: X) (t l rt: list X) (H: merge t l rt) : merge (h :: t) l (rh :: rt)
+  | merge_r (h rh: X) (t l rt: list X) (H: merge l t rt) : merge l (h :: t) (rh :: rt)
+  | merge_complete : merge [] [] []
 .
+
+Example test_merge: merge [1; 6; 2] [4; 3] [1;4;6;2;3].
+Proof.
+  apply merge_l.
+  apply merge_r.
+  apply merge_l.
+  apply merge_l.
+  apply merge_r.
+  apply merge_complete.
+Qed.  
 
 Theorem merge_filter : forall (X : Set) (test: X->bool) (l l1 l2 : list X),
   merge l1 l2 l ->
@@ -2080,13 +2109,22 @@ Proof.
 *)
 
 Inductive pal {X:Type} : list X -> Prop :=
-(* FILL IN HERE *)
+  | pal_empty : pal []
+  | pal_single (x: X) : pal [x]
+  | pal_append (x: X) (l: list X) (H: pal l) : pal (x :: l ++ [x])
 .
 
 Theorem pal_app_rev : forall (X:Type) (l : list X),
   pal (l ++ (rev l)).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  induction l as [|h t IH].
+  - simpl. apply pal_empty.
+  - simpl. 
+    rewrite app_assoc.
+    apply (pal_append h (t ++ rev t)).
+    apply IH.
+Qed.
 
 Theorem pal_rev : forall (X:Type) (l: list X) , pal l -> l = rev l.
 Proof.
