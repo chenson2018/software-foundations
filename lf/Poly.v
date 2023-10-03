@@ -1201,11 +1201,6 @@ Proof. reflexivity. Qed.
     => f^n x] as input, [scc] should produce [fun X f x => f^(n+1) x] as
     output. In other words, do it [n] times, then do it once more. *)
 
-(* Definition scc (n : cnat) : cnat
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
-
- *)
-
 Definition scc (n : cnat) : cnat := (
   fun (X: Type) (f: X -> X) (x: X) => f (n X f x)
 ).
@@ -1263,16 +1258,27 @@ reflexivity. Qed.
     which a type contains itself. So leave the type argument
     unchanged. *)
 
-Definition mult (n m : cnat) : cnat. Admitted.
+Definition mult (n m : cnat) : cnat := (
+  fun (X: Type) (f: X -> X) =>
+  m 
+  (X->X) 
+  (
+    fun F: X -> X 
+ => fun x:X 
+ => n X f (F x)
+  ) 
+  (zero X f)
+)
+.
 
 Example mult_1 : mult one one = one.
-Admitted.
+reflexivity. Qed.
 
 Example mult_2 : mult zero (plus three three) = zero.
-Admitted.
+reflexivity. Qed.
 
 Example mult_3 : mult two three = plus three three.
-Admitted.
+reflexivity. Qed.
 
 (** [] *)
 
@@ -1287,16 +1293,21 @@ Admitted.
     But again, you cannot pass [cnat] itself as the type argument.
     Finding the right type can be tricky. *)
 
-Definition exp (n m : cnat) : cnat . Admitted.
+Definition exp (n m : cnat) : cnat := 
+  (
+     fun X f 
+  => m (X->X) (n X) f
+  )
+.
 
 Example exp_1 : exp two two = plus two two.
-Admitted.
+reflexivity. Qed.
 
 Example exp_2 : exp three zero = one.
-Admitted.
+reflexivity. Qed.
 
 Example exp_3 : exp three two = plus (mult two (mult two two)) one.
-Admitted.
+reflexivity. Qed.
 
 (** [] *)
 
