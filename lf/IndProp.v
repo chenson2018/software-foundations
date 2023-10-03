@@ -1046,7 +1046,7 @@ Theorem R_equiv_fR : forall m n o, R m n o <-> fR m n = o.
   unfold fR.
   split.
     - intros.
-      induction H as [IH | IH | IH | IH | IH].
+      induction H.
       + reflexivity.
       + rewrite plus_1_r. rewrite <- add_assoc. rewrite (add_comm 1 _). rewrite add_assoc.
         rewrite IHR. rewrite <- plus_1_r. reflexivity.
