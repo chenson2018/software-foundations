@@ -13,3 +13,4 @@ The following are complete or parially complete:
 - [Tactics.v](lf/Tactics.v)
 - [Logic.v](lf/Logic.v)
 - [IndProp.v](lf/IndProp.v) (partial)
+- [Maps.v](lf/Maps.v)
