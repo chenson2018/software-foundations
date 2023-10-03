@@ -839,13 +839,25 @@ Qed.
 
 Theorem Sn_le_Sm__n_le_m : forall n m,
   S n <= S m -> n <= m.
-Proof.
-  (* FILL IN HERE *) Admitted.
+Proof.  
+(* FILL IN HERE *) Admitted.
 
 Theorem lt_ge_cases : forall n m,
   n < m \/ n >= m.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold lt.
+  unfold ge.
+  intros n.
+  induction n as [|n IH].
+  - intros [|m].
+    + right. reflexivity.
+    + left. apply n_le_m__Sn_le_Sm. apply O_le_n.
+  - intros [|m].
+    + right. apply O_le_n.
+    + destruct (IH m).
+      * left. apply n_le_m__Sn_le_Sm. apply H.
+      * right. apply n_le_m__Sn_le_Sm. apply H.
+Qed.
 
 Theorem le_plus_l : forall a b,
   a <= a + b.
@@ -861,37 +873,95 @@ Theorem plus_le : forall n1 n2 m,
   n1 + n2 <= m ->
   n1 <= m /\ n2 <= m.
 Proof.
- (* FILL IN HERE *) Admitted.
+  intros n1.
+  induction n1 as [|n1 IH].
+  - simpl. intros. split.
+    + apply O_le_n.
+    + apply H.
+  - intros. split.
+    + rewrite (le_plus_l (S n1) n2). apply H.
+    + rewrite add_comm in H.
+      rewrite <- le_plus_l in H.
+      apply H.
+Qed.      
+
 
 Theorem add_le_cases : forall n m p q,
   n + m <= p + q -> n <= p \/ m <= q.
   (** Hint: May be easiest to prove by induction on [n]. *)
 Proof.
-(* FILL IN HERE *) Admitted.
+  induction n as [|n IH].
+  - intros. left. apply O_le_n.
+  (* there has to be an easier way... *)
+  - intros [|m] [|p] [|q].
+    + intros. right. apply le_n.
+    + intros. right. apply O_le_n.
+    + intros. right. apply le_n.
+    + intros. right. apply O_le_n.
+    + intros. inversion H.
+    + intros. apply plus_le in H. destruct H. right. apply H0.
+    + intros. apply plus_le in H. destruct H. left. rewrite add_0_r in H. apply H.
+    + intros. simpl in H. 
+      apply Sn_le_Sm__n_le_m in H.
+      rewrite (plus_1_r m) in H.
+      rewrite (plus_1_r q) in H.
+      rewrite add_assoc in H.
+      rewrite add_assoc in H.
+      rewrite <- plus_1_r in H.
+      rewrite <- plus_1_r in H.
+      apply Sn_le_Sm__n_le_m in H.
+      apply IH in H.
+      destruct H.
+      * left. apply n_le_m__Sn_le_Sm. apply H.
+      * right. apply n_le_m__Sn_le_Sm. apply H.
+Qed.
 
 Theorem plus_le_compat_l : forall n m p,
   n <= m ->
   p + n <= p + m.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  induction H as [|A B].
+  - apply le_n.
+  - rewrite plus_1_r.
+    rewrite add_assoc.
+    rewrite <- plus_1_r.
+    apply le_S.
+    apply IHB.
+Qed.    
 
 Theorem plus_le_compat_r : forall n m p,
   n <= m ->
   n + p <= m + p.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  induction H as [|A B].
+  - apply le_n.
+  - simpl. apply le_S. apply IHB.
+Qed.    
 
 Theorem le_plus_trans : forall n m p,
   n <= m ->
   n <= m + p.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  induction p as [|p IH].
+  - rewrite add_0_r. apply H.
+  - rewrite plus_1_r.
+    rewrite add_assoc.
+    rewrite <- plus_1_r.
+    apply le_S.
+    apply IH.
+Qed.    
 
 Theorem n_lt_m__n_le_m : forall n m,
   n < m ->
   n <= m.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold lt.
+  intros.
+  apply le_S in H. apply Sn_le_Sm__n_le_m in H. apply H.
+Qed.  
 
 Theorem plus_lt : forall n1 n2 m,
   n1 + n2 < m ->
@@ -905,6 +975,10 @@ Theorem leb_complete : forall n m,
   n <=? m = true -> n <= m.
 Proof.
   (* FILL IN HERE *) Admitted.
+
+Lemma leb_0: forall n, (0 <=? n) = true.
+Proof.
+Admitted.
 
 Theorem leb_correct : forall n m,
   n <= m ->
