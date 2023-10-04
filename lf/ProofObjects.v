@@ -174,12 +174,9 @@ Print ev_4'''.
     Give a tactic proof and a proof object showing that [ev 8]. *)
 
 Theorem ev_8 : ev 8.
-Proof.
-  (* FILL IN HERE *) Admitted.
+Proof. repeat constructor. Qed.
 
-Definition ev_8' : ev 8
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
-(** [] *)
+Definition ev_8' : ev 8 := ev_SS 6 (ev_SS 4 (ev_SS 2 (ev_SS 0 ev_0))).
 
 (* ################################################################# *)
 (** * Quantifiers, Implications, Functions *)
@@ -395,9 +392,24 @@ Definition and_comm' P Q : P /\ Q <-> Q /\ P :=
 
     Construct a proof object for the following proposition. *)
 
-Definition conj_fact : forall P Q R, P /\ Q -> Q /\ R -> P /\ R
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
-(** [] *)
+Definition conj_fact' : forall P Q R, P /\ Q -> Q /\ R -> P /\ R.
+  intros P Q R [P' _] [_ R'].
+  split.
+  - apply P'.
+  - apply R'.
+  Show Proof.
+Defined.
+
+Definition conj_fact : forall P Q R, P /\ Q -> Q /\ R -> P /\ R :=
+(fun P Q R (H1 : P /\ Q) =>
+ match H1 with
+ | conj x x0 =>
+     (fun (P' : P) (_ : Q) (H2 : Q /\ R) =>
+      match H2 with
+      | conj x1 x2 => (fun (_ : Q) (R' : R) => conj P' R') x1 x2
+      end) x x0
+ end)
+.
 
 (* ================================================================= *)
 (** ** Disjunction *)
@@ -452,8 +464,18 @@ End Or.
 
     Construct a proof object for the following proposition. *)
 
-Definition or_commut' : forall P Q, P \/ Q -> Q \/ P
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+(* did this one without peeking at "Show Proof"! *)
+
+Definition or_commut' : forall P Q, P \/ Q -> Q \/ P :=
+  (
+    fun P Q (H: P \/ Q) => 
+      match H with
+      | or_introl P' => or_intror Q P'
+      | or_intror Q' => or_introl P Q'
+      end
+  )
+.
+
 (** [] *)
 
 (* ================================================================= *)
@@ -498,9 +520,54 @@ Definition some_nat_is_even : exists n, ev n :=
 
     Construct a proof object for the following proposition. *)
 
-Definition ex_ev_Sn : ex (fun n => ev (S n))
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
-(** [] *)
+(* 
+   had to peek this time
+   
+*)
+
+Definition ex_ev_Sn' : ex (fun n => ev (S n)).
+  (*
+    Equivalent to:
+
+     exists n : nat, ev (S n)
+  *)
+
+  exists 1.
+  Show Proof. 
+  (* (ex_intro (fun n : nat => ev (S n)) 1 ?Goal) *)
+
+  apply ev_SS.
+  Show Proof.
+  (* (ex_intro (fun n : nat => ev (S n)) 1 (ev_SS 0 ?Goal)) *)
+
+  apply ev_0.
+  Show Proof.
+  (* (ex_intro (fun n : nat => ev (S n)) 1 (ev_SS 0 ev_0)) *)
+Defined.
+
+(* 
+  Rephrasing the above for my understanding.
+
+  we have a witness x
+
+  P is a function from witnesses to Propositions
+
+  The inductive existensial type gives us a constructor that takes a witness x and a proof (type) of the Proposition (P x) as evidence of (ex P)
+
+*)
+
+Definition ex_ev_Sn : ex (fun n => ev (S n)) :=
+  ex_intro 
+
+  (* P: Type -> Prop *) 
+  (fun n => ev (S n)) 
+  
+  (* witness x *)
+  1 
+
+  (* Proof of P x *)
+  (ev_SS 0 ev_0)
+.
 
 (* ================================================================= *)
 (** ** [True] and [False] *)
@@ -517,9 +584,7 @@ Inductive True : Prop :=
 
     Construct a proof object for the following proposition. *)
 
-Definition p_implies_true : forall P, P -> True
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
-(** [] *)
+Definition p_implies_true : forall P, P -> True := (fun _ _ => I).
 
 (** [False] is equally simple -- indeed, so simple it may look
     syntactically wrong at first glance! *)
@@ -552,9 +617,9 @@ Definition false_implies_zero_eq_one : False -> 0 = 1 :=
 
     Construct a proof object for the following proposition. *)
 
-Definition ex_falso_quodlibet' : forall P, False -> P
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
-(** [] *)
+Definition ex_falso_quodlibet' : forall P, False -> P :=
+  (fun _ contra => match contra with end)
+.
 
 End Props.
 
@@ -650,11 +715,15 @@ Qed.
     Construct the proof object for this theorem. Use pattern matching
     against the equality hypotheses. *)
 
-Definition eq_cons : forall (X : Type) (h1 h2 : X) (t1 t2 : list X),
-    h1 == h2 -> t1 == t2 -> h1 :: t1 == h2 :: t2
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+  (* first try, wooho!! *)
 
-(** [] *)
+Definition eq_cons : forall (X : Type) (h1 h2 : X) (t1 t2 : list X),
+    h1 == h2 -> t1 == t2 -> h1 :: t1 == h2 :: t2 :=
+  fun _ _ _ _ _ H1 H2 =>
+  match H1, H2 with
+  | eq_refl h, eq_refl t => eq_refl (h :: t)
+  end
+.
 
 (** **** Exercise: 2 stars, standard (equality__leibniz_equality)
 
@@ -666,8 +735,10 @@ Definition eq_cons : forall (X : Type) (h1 h2 : X) (t1 t2 : list X),
 Lemma equality__leibniz_equality : forall (X : Type) (x y: X),
   x == y -> forall (P : X -> Prop), P x -> P y.
 Proof.
-  (* FILL IN HERE *) Admitted.
-(** [] *)
+  intros.
+  destruct H. apply H0.
+  Show Proof.
+Qed.
 
 (** **** Exercise: 2 stars, standard (equality__leibniz_equality_term)
 
@@ -675,10 +746,19 @@ Proof.
     requires is anonymous functions and pattern-matching; the large
     proof term constructed by tactics in the previous exercise is
     needessly complicated. Hint: pattern-match as soon as possible. *)
+
+(* 
+   w/o the hint above I might now have found this,
+   definitely an instance of intuitive symbol manipulation...
+*)
+
 Definition equality__leibniz_equality_term : forall (X : Type) (x y: X),
-    x == y -> forall P : (X -> Prop), P x -> P y
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
-(** [] *)
+    x == y -> forall P : (X -> Prop), P x -> P y :=
+  fun _ _ _ H => 
+    match H with
+    | eq_refl _ => (fun _ p => p)
+    end
+.
 
 (** **** Exercise: 3 stars, standard, optional (leibniz_equality__equality)
 
@@ -690,8 +770,8 @@ Definition equality__leibniz_equality_term : forall (X : Type) (x y: X),
 Lemma leibniz_equality__equality : forall (X : Type) (x y: X),
   (forall P:X->Prop, P x -> P y) -> x == y.
 Proof.
-(* FILL IN HERE *) Admitted.
-(** [] *)
+  intros. apply H. apply eq_refl.
+Qed.  
 
 End EqualityPlayground.
 
