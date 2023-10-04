@@ -16,3 +16,4 @@ The following are complete or parially complete:
 - [Maps.v](lf/Maps.v)
 - [ProofObjects.v](lf/ProofObjects.v)
 - [IndPrinciples.v](lf/IndPrinciples.v)
+- [Rel.v](lf/Rel.v)
