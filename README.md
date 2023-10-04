@@ -15,3 +15,4 @@ The following are complete or parially complete:
 - [IndProp.v](lf/IndProp.v) (partial)
 - [Maps.v](lf/Maps.v)
 - [ProofObjects.v](lf/ProofObjects.v)
+- [IndPrinciples.v](lf/IndPrinciples.v)
