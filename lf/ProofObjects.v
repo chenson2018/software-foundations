@@ -905,20 +905,23 @@ Fail Definition falso : False := infinite_loop 0.
 
 (** **** Exercise: 2 stars, standard (and_assoc) *)
 Definition and_assoc : forall P Q R : Prop,
-    P /\ (Q /\ R) -> (P /\ Q) /\ R
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
-(** [] *)
+    P /\ (Q /\ R) -> (P /\ Q) /\ R :=
+    fun _ _ _ H => 
+      match H with
+      | conj P' (conj Q' R') => conj (conj P' Q') R'
+      end
+.
 
 (** **** Exercise: 3 stars, standard (or_distributes_over_and) *)
 Definition or_distributes_over_and : forall P Q R : Prop,
     P \/ (Q /\ R) <-> (P \/ Q) /\ (P \/ R)
   (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
-(** [] *)
 
 (** **** Exercise: 3 stars, standard (negations) *)
 Definition double_neg : forall P : Prop,
-    P -> ~~P
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+    P -> ~~P :=
+    fun _ P' => fun H: _ -> False => H P'
+.
 
 Definition contradiction_implies_anything : forall P Q : Prop,
     (P /\ ~P) -> Q
