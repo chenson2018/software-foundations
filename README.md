@@ -14,4 +14,4 @@ The following are complete or parially complete:
 - [Logic.v](lf/Logic.v)
 - [IndProp.v](lf/IndProp.v) (partial)
 - [Maps.v](lf/Maps.v)
-- [ProofObjects.v](lf/ProofObjects.v) (partial)
+- [ProofObjects.v](lf/ProofObjects.v)

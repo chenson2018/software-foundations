@@ -914,8 +914,25 @@ Definition and_assoc : forall P Q R : Prop,
 
 (** **** Exercise: 3 stars, standard (or_distributes_over_and) *)
 Definition or_distributes_over_and : forall P Q R : Prop,
-    P \/ (Q /\ R) <-> (P \/ Q) /\ (P \/ R)
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+    P \/ (Q /\ R) <-> (P \/ Q) /\ (P \/ R) :=
+  fun P Q R =>
+  conj
+    (
+      fun H => 
+        match H with
+        | or_introl P' => conj (or_introl P') (or_introl P')
+        | or_intror (conj Q' R') =>  conj (or_intror Q') (or_intror R')
+        end
+    )
+    (
+      fun H =>
+        match H with
+        | conj (or_introl P') Q'
+        | conj (or_intror Q') (or_introl P') =>  or_introl P'
+        | conj (or_intror Q') (or_intror R') => or_intror (conj Q' R')
+        end
+    )
+.
 
 (** **** Exercise: 3 stars, standard (negations) *)
 Definition double_neg : forall P : Prop,
@@ -924,23 +941,34 @@ Definition double_neg : forall P : Prop,
 .
 
 Definition contradiction_implies_anything : forall P Q : Prop,
-    (P /\ ~P) -> Q
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+    (P /\ ~P) -> Q :=
+  fun _ _ H => 
+    match H with
+    | conj P' np => match (np P') with end
+    end
+.
 
 Definition de_morgan_not_or : forall P Q : Prop,
-    ~ (P \/ Q) -> ~P /\ ~Q
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
-(** [] *)
+    ~ (P \/ Q) -> ~P /\ ~Q :=
+  fun P Q => fun H:_->False =>
+    conj 
+    (fun P' => H (or_introl P'))
+    (fun Q' => H (or_intror Q'))
+.
 
 (** **** Exercise: 2 stars, standard (currying) *)
 Definition curry : forall P Q R : Prop,
-    ((P /\ Q) -> R) -> (P -> (Q -> R))
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+    ((P /\ Q) -> R) -> (P -> (Q -> R)) :=
+    fun P Q R => fun H:_->R => fun P' Q' => H (conj P' Q')
+.
 
 Definition uncurry : forall P Q R : Prop,
-    (P -> (Q -> R)) -> ((P /\ Q) -> R)
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
-(** [] *)
+    (P -> (Q -> R)) -> ((P /\ Q) -> R) :=
+    fun P Q R H1 H2 => 
+      match H2 with
+      | conj P' Q' => H1 P' Q'
+      end
+.
 
 (* ################################################################# *)
 (** * Proof Irrelevance (Advanced) *)
@@ -967,8 +995,11 @@ Theorem pe_implies_or_eq :
   propositional_extensionality ->
   forall (P Q : Prop), (P \/ Q) = (Q \/ P).
 Proof.
-  (* FILL IN HERE *) Admitted.
-(** [] *)
+  unfold propositional_extensionality.
+  intros.
+  apply H.
+  split; intros; rewrite or_comm; apply H0.
+Qed.
 
 (** **** Exercise: 1 star, advanced (pe_implies_true_eq)
 
@@ -978,8 +1009,13 @@ Proof.
 Lemma pe_implies_true_eq :
   propositional_extensionality ->
   forall (P : Prop), P -> True = P.
-Proof. (* FILL IN HERE *) Admitted.
-(** [] *)
+Proof.
+  intros.
+  apply H.
+  split.
+  - intros. apply H0.
+  - intros. apply I.
+Qed.    
 
 (** **** Exercise: 3 stars, advanced (pe_implies_pi)
 
@@ -1001,7 +1037,12 @@ Definition proof_irrelevance : Prop :=
 
 Theorem pe_implies_pi :
   propositional_extensionality -> proof_irrelevance.
-Proof. (* FILL IN HERE *) Admitted.
-(** [] *)
+Proof.
+  intros PE P pf1 pf2.
+  assert (H: True = P). 
+    { apply (pe_implies_true_eq PE). apply pf1. }
+  destruct H.
+  rewrite pf1. rewrite pf2. reflexivity.
+Qed.
 
 (* 2023-08-23 11:29 *)
