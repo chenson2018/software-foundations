@@ -1617,8 +1617,12 @@ Example ceval_example2:
     Z := 2
   ]=> (Z !-> 2 ; Y !-> 1 ; X !-> 0).
 Proof.
-  (* FILL IN HERE *) Admitted.
-(** [] *)
+  apply E_Seq with (X !-> 0).
+  - apply E_Asgn. reflexivity.
+  - apply E_Seq with (Y !-> 1; X !-> 0).
+    + apply E_Asgn. reflexivity.
+    + apply E_Asgn. reflexivity.
+Qed.
 
 Set Printing Implicit.
 Check @ceval_example2.
@@ -1631,16 +1635,47 @@ Check @ceval_example2.
     which you can reverse-engineer to discover the program you should
     write.  The proof of that theorem will be somewhat lengthy. *)
 
-Definition pup_to_n : com
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Definition pup_to_n : com :=
+  <{
+    Y := 0;
+    while ~(X = 0) do
+      Y := (Y + X);
+      X := (X - 1)
+    end
+  }>
+.
 
 Theorem pup_to_2_ceval :
   (X !-> 2) =[
     pup_to_n
   ]=> (X !-> 0 ; Y !-> 3 ; X !-> 1 ; Y !-> 2 ; Y !-> 0 ; X !-> 2).
 Proof.
-  (* FILL IN HERE *) Admitted.
-(** [] *)
+  unfold pup_to_n.
+  apply E_Seq with (Y !-> 0; X !-> 2).
+  - apply E_Asgn. reflexivity.
+  - apply 
+    (
+      E_WhileTrue 
+        (Y !-> 0; X !-> 2)
+        ( X !-> 1 ; Y !-> 2 ; Y !-> 0; X !-> 2)
+        _
+    ).
+      + simpl. reflexivity.
+      + apply E_Seq with (Y !-> 2; Y !-> 0; X !-> 2).
+        * apply E_Asgn. simpl. reflexivity.
+        * apply E_Asgn. simpl. reflexivity.
+      + apply
+        (
+          E_WhileTrue
+          ( X !-> 1 ; Y !-> 2 ; Y !-> 0; X !-> 2)
+          (X !-> 0 ; Y !-> 3 ; X !-> 1 ; Y !-> 2 ; Y !-> 0 ; X !-> 2)
+        ).
+        * simpl. reflexivity.
+        * apply E_Seq with  (Y !-> 3; X !-> 1; Y !-> 2; Y !-> 0; X !-> 2).
+          -- apply E_Asgn. simpl. reflexivity.
+          -- apply E_Asgn. simpl. reflexivity.
+        * apply E_WhileFalse. simpl. reflexivity.
+Qed.
 
 (* ================================================================= *)
 (** ** Determinism of Evaluation *)
@@ -1715,7 +1750,18 @@ Proof.
 
     State and prove a specification of [XtimesYinZ]. *)
 
-(* FILL IN HERE *)
+Theorem XtimesYinZ_spec: forall st st' (x y z : nat),
+  st X = x ->
+  st Y = y ->
+  st =[ Z := X * Y ]=> st' ->
+  st' Z = x * y
+.
+  intros.
+  inversion H1.
+  subst.
+  simpl.
+  apply t_update_eq.
+Qed.
 
 (* Do not modify the following line: *)
 Definition manual_grade_for_XtimesYinZ_spec : option (nat*string) := None.
@@ -1729,13 +1775,17 @@ Proof.
   remember <{ while true do skip end }> as loopdef
            eqn:Heqloopdef.
 
+  induction contra
+    ; try (subst; discriminate)
+  .
+  - inversion Heqloopdef. subst. discriminate.
+  - inversion Heqloopdef. subst.  apply IHcontra2. reflexivity.
+Qed.
+
   (** Proceed by induction on the assumed derivation showing that
       [loopdef] terminates.  Most of the cases are immediately
       contradictory and so can be solved in one step with
       [discriminate]. *)
-
-  (* FILL IN HERE *) Admitted.
-(** [] *)
 
 (** **** Exercise: 3 stars, standard (no_whiles_eqv)
 
@@ -1761,14 +1811,44 @@ Fixpoint no_whiles (c : com) : bool :=
     while loops.  Then prove its equivalence with [no_whiles]. *)
 
 Inductive no_whilesR: com -> Prop :=
- (* FILL IN HERE *)
+  | nwCSkip : no_whilesR CSkip
+  | nwCAsgn x a : no_whilesR (CAsgn x a)
+  | nwCSeq c1 c2 (H1: no_whilesR c1) (H2: no_whilesR c2) : no_whilesR (CSeq c1 c2)
+  | nwCIf b c1 c2 (H1: no_whilesR c1) (H2: no_whilesR c2) : no_whilesR (CIf b c1 c2)
 .
 
 Theorem no_whiles_eqv:
   forall c, no_whiles c = true <-> no_whilesR c.
 Proof.
-  (* FILL IN HERE *) Admitted.
-(** [] *)
+  split.
+  - induction c
+    ; intros
+    (* cases with (two) sub-commands, each with evidence of no_whilesR *)
+    ; try
+      (
+        apply andb_prop in H
+      ; constructor
+        ; try (apply IHc1)
+        ; try (apply IHc2)
+      ; apply H
+      )
+    (* only expressions in constructor *)
+    ; try constructor
+    (* impossible while case *)
+    ; inversion H
+    .
+  - intros.
+    induction c
+    ; try reflexivity
+    ; simpl
+    ; inversion H
+    ; apply andb_true_iff
+    ; split
+    ; try (apply IHc1)
+    ; try (apply IHc2)
+    ; assumption
+    . 
+Qed.
 
 (** **** Exercise: 4 stars, standard (no_whiles_terminating)
 
@@ -1777,7 +1857,44 @@ Proof.
 
     Use either [no_whiles] or [no_whilesR], as you prefer. *)
 
-(* FILL IN HERE *)
+Theorem no_whiles_terminating: forall c st,
+  no_whilesR c ->
+  exists st', st =[ c ]=> st'.
+Proof.
+  intros.
+  generalize dependent st. (* I would rather do this than reshape the Theorem *)
+  induction c.
+  - intros. exists st. constructor.
+  - intros. exists (x !-> (aeval st a); st). constructor. reflexivity.
+  - inversion H. subst. intros.
+
+    assert (e1: exists st1, st =[ c1 ]=> st1).
+    { apply IHc1. apply H0. }
+    destruct e1 as [st1 H1]. 
+
+    assert (e2: exists st2, st1 =[ c2 ]=> st2).
+    { apply IHc2. apply H3. }
+    destruct e2 as [st2 H2].
+
+    exists st2.
+    apply E_Seq with st1; assumption.
+    
+  - inversion H. subst. intros.
+
+    assert (e1: exists st1, st =[ c1 ]=> st1).
+    { apply IHc1. apply H0. }
+    destruct e1 as [st1 H1]. 
+
+    assert (e2: exists st2, st =[ c2 ]=> st2).
+    { apply IHc2. apply H4. }
+    destruct e2 as [st2 H2].
+
+    destruct (beval st b) eqn:E.
+    + exists st1. constructor; assumption.
+    + exists st2. constructor; assumption.
+
+  - inversion H.
+Qed.
 
 (* Do not modify the following line: *)
 Definition manual_grade_for_no_whiles_terminating : option (nat*string) := None.
@@ -1848,8 +1965,20 @@ Inductive sinstr : Type :=
 
 Fixpoint s_execute (st : state) (stack : list nat)
                    (prog : list sinstr)
-                 : list nat
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+                 : list nat :=
+  match prog with
+  | [] => stack
+  | ins :: prog_tl =>
+      match ins, stack with
+      | SPush n, _ => s_execute st (n :: stack)  prog_tl
+      | SLoad x, _ => s_execute st ((st x) :: stack) prog_tl
+      | SPlus , n :: m :: stack_tl => s_execute st ((m + n) :: stack_tl) prog_tl
+      | SMinus, n :: m :: stack_tl => s_execute st ((m - n) :: stack_tl) prog_tl
+      | SMult , n :: m :: stack_tl => s_execute st ((m * n) :: stack_tl) prog_tl
+      | _, _ => s_execute st stack prog_tl
+      end
+  end
+.
 
 Check s_execute.
 
@@ -1857,13 +1986,13 @@ Example s_execute1 :
      s_execute empty_st []
        [SPush 5; SPush 3; SPush 1; SMinus]
    = [2; 5].
-(* FILL IN HERE *) Admitted.
+Proof. reflexivity. Qed.
 
 Example s_execute2 :
      s_execute (X !-> 3) [3;4]
        [SPush 4; SLoad X; SMult; SPlus]
    = [15; 4].
-(* FILL IN HERE *) Admitted.
+Proof. reflexivity. Qed.
 
 (** Next, write a function that compiles an [aexp] into a stack
     machine program. The effect of running the program should be the
