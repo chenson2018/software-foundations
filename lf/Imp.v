@@ -464,14 +464,26 @@ Admitted.
     it is sound.  Use the tacticals we've just seen to make the proof
     as short and elegant as possible. *)
 
-Fixpoint optimize_0plus_b (b : bexp) : bexp
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Fixpoint optimize_0plus_b (b : bexp) : bexp := 
+  match b with
+  | BEq a1 a2   => BEq  (optimize_0plus a1) (optimize_0plus a2)
+  | BNeq a1 a2  => BNeq (optimize_0plus a1) (optimize_0plus a2)
+  | BLe a1 a2   => BLe  (optimize_0plus a1) (optimize_0plus a2)
+  | BGt a1 a2   => BGt  (optimize_0plus a1) (optimize_0plus a2)
+  | _ => b
+  end.
 
 Theorem optimize_0plus_b_sound : forall b,
   beval (optimize_0plus_b b) = beval b.
 Proof.
-  (* FILL IN HERE *) Admitted.
-(** [] *)
+  intros.
+  induction b
+    ; try reflexivity
+    ; simpl
+    ; repeat (rewrite optimize_0plus_sound)
+    ; reflexivity
+  .
+Qed.
 
 (** **** Exercise: 4 stars, standard, optional (optimize)
 
@@ -848,15 +860,78 @@ Qed.
 
 Reserved Notation "e '==>b' b" (at level 90, left associativity).
 Inductive bevalR: bexp -> bool -> Prop :=
-(* FILL IN HERE *)
+  | BTrueR : BTrue ==>b true
+  | BFalseR : BFalse ==>b false
+  | BEqR (ae1 ae2: aexp) (n1 n2: nat) : 
+      (ae1 ==> n1) 
+   -> (ae2 ==> n2) 
+   -> (BEq ae1 ae2) ==>b (n1 =? n2)
+  | BNeqR (ae1 ae2: aexp) (n1 n2: nat) : 
+      (ae1 ==> n1) 
+   -> (ae2 ==> n2) 
+   -> (BNeq ae1 ae2) ==>b negb (n1 =? n2)
+  | BLeR (ae1 ae2: aexp) (n1 n2: nat) : 
+      (ae1 ==> n1) 
+   -> (ae2 ==> n2) 
+   -> (BLe ae1 ae2) ==>b (n1 <=? n2)
+  | BGtR (ae1 ae2: aexp) (n1 n2: nat) : 
+      (ae1 ==> n1) 
+   -> (ae2 ==> n2) 
+   -> (BGt ae1 ae2) ==>b negb (n1 <=? n2)
+  | BNotR (be1: bexp) (b1: bool) : 
+      (be1 ==>b b1) 
+   -> (BNot be1) ==>b negb b1
+  | BAndR (be1 be2: bexp) (b1 b2: bool) : 
+      (be1 ==>b b1) 
+   -> (be2 ==>b b2) 
+   -> (BAnd be1 be2) ==>b andb b1 b2
 where "e '==>b' b" := (bevalR e b) : type_scope
 .
 
 Lemma beval_iff_bevalR : forall b bv,
   b ==>b bv <-> beval b = bv.
 Proof.
-  (* FILL IN HERE *) Admitted.
-(** [] *)
+  split.
+  - intros.
+    induction H
+      ; try constructor
+      ; try 
+        (
+          rewrite aeval_iff_aevalR in H
+        ; rewrite aeval_iff_aevalR in H0
+        ; rewrite <- H
+        ; rewrite <- H0
+        ; reflexivity
+        )
+      ; try
+        (
+          subst; simpl; reflexivity
+        )
+    .
+  - intros. generalize dependent bv.
+    induction b
+      ; try
+        (
+          simpl
+        ; intros
+        ; subst
+        ; constructor
+        ; rewrite aeval_iff_aevalR'
+        ; try reflexivity
+        )
+      ; 
+        (
+          simpl
+        ; intros
+        ; rewrite <- H
+        ; constructor
+        ; try (apply IHb)
+        ; try (apply IHb1)
+        ; try (apply IHb2)
+        ; reflexivity
+        )
+      .
+Qed.
 
 End AExp.
 
