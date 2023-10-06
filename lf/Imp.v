@@ -2327,8 +2327,15 @@ Theorem while_break_true : forall b c st st',
   beval st' b = true ->
   exists st'', st'' =[ c ]=> st' / SBreak.
 Proof.
-(* FILL IN HERE *) Admitted.
-(** [] *)
+  intros.
+  remember <{ while b do c end }> eqn:loop.
+  induction H
+  ; try inversion loop
+  .
+  - subst. rewrite H in H0. inversion H0.
+  - apply IHceval2; assumption.
+  - exists st. subst. assumption.
+Qed.
 
 (** **** Exercise: 4 stars, advanced, optional (ceval_deterministic) *)
 Theorem ceval_deterministic: forall (c:com) st st1 st2 s1 s2,
