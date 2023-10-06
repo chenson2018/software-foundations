@@ -1998,8 +1998,15 @@ Proof. reflexivity. Qed.
     machine program. The effect of running the program should be the
     same as pushing the value of the expression on the stack. *)
 
-Fixpoint s_compile (e : aexp) : list sinstr
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Fixpoint s_compile (e : aexp) : list sinstr :=
+  match e with
+  | ANum n => [SPush n]
+  | AId X => [SLoad X]
+  | APlus  n m => (s_compile n) ++ (s_compile m) ++ [SPlus ]
+  | AMinus n m => (s_compile n) ++ (s_compile m) ++ [SMinus]
+  | AMult  n m => (s_compile n) ++ (s_compile m) ++ [SMult ]
+  end
+.
 
 (** After you've defined [s_compile], prove the following to test
     that it works. *)
@@ -2007,8 +2014,7 @@ Fixpoint s_compile (e : aexp) : list sinstr
 Example s_compile1 :
   s_compile <{ X - (2 * Y) }>
   = [SLoad X; SPush 2; SLoad Y; SMult; SMinus].
-(* FILL IN HERE *) Admitted.
-(** [] *)
+Proof. reflexivity. Qed.
 
 (** **** Exercise: 3 stars, standard (execute_app) *)
 
