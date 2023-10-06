@@ -2026,9 +2026,21 @@ Proof. reflexivity. Qed.
 Theorem execute_app : forall st p1 p2 stack,
   s_execute st stack (p1 ++ p2) = s_execute st (s_execute st stack p1) p2.
 Proof.
-  (* FILL IN HERE *) Admitted.
-
-(** [] *)
+  intros st p1.
+  generalize dependent st.
+  induction p1.
+  - intros.
+    + simpl. reflexivity.
+  - induction a
+    ; intros
+    (* push/load *)
+    ; try (apply IHp1)
+    (* arithmetic *)
+    ; destruct stack
+    ; try (apply IHp1)
+    ; try ( destruct stack; apply IHp1)
+    .
+Qed.
 
 (** **** Exercise: 3 stars, standard (stack_compiler_correct) *)
 
@@ -2040,16 +2052,31 @@ Proof.
 Lemma s_compile_correct_aux : forall st e stack,
   s_execute st stack (s_compile e) = aeval st e :: stack.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros st e.
+  generalize dependent st.
+  induction e
+  ; intros
+  ; try reflexivity
+  ; try 
+    (
+      simpl
+    ; rewrite execute_app
+    ; rewrite IHe1
+    ; rewrite execute_app
+    ; rewrite IHe2
+    ; reflexivity
+    )
+  .
+Qed.
 
 (** The main theorem should be a very easy corollary of that lemma. *)
 
 Theorem s_compile_correct : forall (st : state) (e : aexp),
   s_execute st [] (s_compile e) = [ aeval st e ].
 Proof.
-  (* FILL IN HERE *) Admitted.
-
-(** [] *)
+  intros.
+  apply s_compile_correct_aux.
+Qed.  
 
 (** **** Exercise: 3 stars, standard, optional (short_circuit)
 
@@ -2068,9 +2095,28 @@ Proof.
     would _not_ be equivalent to the original, since it would make more
     programs terminate.) *)
 
-(* FILL IN HERE
+Fixpoint beval' (st : state) (b : bexp) : bool :=
+  match b with
+  | <{true}>      => true
+  | <{false}>     => false
+  | <{a1 = a2}>   => (aeval st a1) =? (aeval st a2)
+  | <{a1 <> a2}>  => negb ((aeval st a1) =? (aeval st a2))
+  | <{a1 <= a2}>  => (aeval st a1) <=? (aeval st a2)
+  | <{a1 > a2}>   => negb ((aeval st a1) <=? (aeval st a2))
+  | <{~ b1}>      => negb (beval' st b1)
+  | <{b1 && b2}>  => match (beval' st b1) with
+                     | false => false
+                     | true  => beval' st b2
+                     end
+  end.
 
-    [] *)
+Theorem short_circuit_eq: forall b st, beval st b = beval' st b.
+Proof.
+  induction b
+  ; intros
+  ; reflexivity
+  .
+Qed.
 
 Module BreakImp.
 (** **** Exercise: 4 stars, advanced (break_imp)
@@ -2192,8 +2238,38 @@ Reserved Notation "st '=[' c ']=>' st' '/' s"
 Inductive ceval : com -> state -> result -> state -> Prop :=
   | E_Skip : forall st,
       st =[ CSkip ]=> st / SContinue
-  (* FILL IN HERE *)
-
+  | E_Break : forall st,
+      st =[ CBreak ]=> st / SBreak
+  | E_Asgn  : forall st a n x,
+      aeval st a = n ->
+      st =[ x := a ]=> (x !-> n ; st) / SContinue
+  | E_Seq_Continue : forall c1 c2 st st' st'' signal,
+      st  =[ c1 ]=> st' / SContinue  ->
+      st' =[ c2 ]=> st'' / signal ->
+      st  =[ c1 ; c2 ]=> st'' / signal
+  | E_Seq_Break : forall c1 c2 st st',
+      st  =[ c1 ]=> st' / SBreak  ->
+      st  =[ c1; c2 ]=> st' / SBreak
+  | E_IfTrue : forall st st' b c1 c2 signal,
+      beval st b = true ->
+      st =[ c1 ]=> st' / signal ->
+      st =[ if b then c1 else c2 end]=> st' / signal
+  | E_IfFalse : forall st st' b c1 c2 signal,
+      beval st b = false ->
+      st =[ c2 ]=> st' / signal ->
+      st =[ if b then c1 else c2 end]=> st' / signal
+  | E_WhileFalse : forall b st c,
+      beval st b = false ->
+      st =[ while b do c end ]=> st / SContinue
+  | E_WhileTrue_Continue : forall st st' st'' b c,
+      beval st b = true ->
+      st  =[ c ]=> st' / SContinue ->
+      st' =[ while b do c end ]=> st'' / SContinue ->
+      st  =[ while b do c end ]=> st'' / SContinue
+  | E_WhileTrue_Break : forall st st' b c,
+      beval st b = true ->
+      st  =[ c ]=> st' / SBreak ->
+      st =[ while b do c end ]=> st' / SContinue
   where "st '=[' c ']=>' st' '/' s" := (ceval c st s st').
 
 (** Now prove the following properties of your definition of [ceval]: *)
@@ -2202,34 +2278,48 @@ Theorem break_ignore : forall c st st' s,
      st =[ break; c ]=> st' / s ->
      st = st'.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  assert (H': st  =[ CBreak ]=> st / SBreak).
+  { apply E_Break. }
+  inversion H.
+  - inversion H'. inversion H2.
+  - inversion H'. inversion H5. subst. apply H9.
+Qed.
 
 Theorem while_continue : forall b c st st' s,
   st =[ while b do c end ]=> st' / s ->
   s = SContinue.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  inversion H; reflexivity.
+Qed.
 
 Theorem while_stops_on_break : forall b c st st',
   beval st b = true ->
   st =[ c ]=> st' / SBreak ->
   st =[ while b do c end ]=> st' / SContinue.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  apply (E_WhileTrue_Break _ _ _ _ H H0).
+Qed.
 
 Theorem seq_continue : forall c1 c2 st st' st'',
   st =[ c1 ]=> st' / SContinue ->
   st' =[ c2 ]=> st'' / SContinue ->
   st =[ c1 ; c2 ]=> st'' / SContinue.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  apply (E_Seq_Continue c1 c2 st st' st'' SContinue H H0).
+Qed.
 
 Theorem seq_stops_on_break : forall c1 c2 st st',
   st =[ c1 ]=> st' / SBreak ->
   st =[ c1 ; c2 ]=> st' / SBreak.
 Proof.
-  (* FILL IN HERE *) Admitted.
-(** [] *)
+  intros.
+  apply E_Seq_Break.
+  apply H.
+Qed.
 
 (** **** Exercise: 3 stars, advanced, optional (while_break_true) *)
 Theorem while_break_true : forall b c st st',
