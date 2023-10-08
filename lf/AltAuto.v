@@ -183,11 +183,24 @@ Theorem andb_eq_orb :
   forall (b c : bool),
   (andb b c = orb b c) ->
   b = c.
-Proof. (* FILL IN HERE *) Admitted.
+Proof. 
+  intros [] [] H
+  ; try reflexivity
+  ; inversion H
+  .
+Qed.  
 
 Theorem add_assoc : forall n m p : nat,
     n + (m + p) = (n + m) + p.
-Proof. (* FILL IN HERE *) Admitted.
+Proof.
+  induction n
+  ; intros
+  ; simpl
+  ; try reflexivity
+  ; rewrite IHn
+  ; reflexivity
+  .
+Qed.
 
 Fixpoint nonzeros (lst : list nat) :=
   match lst with
@@ -198,9 +211,17 @@ Fixpoint nonzeros (lst : list nat) :=
 
 Lemma nonzeros_app : forall lst1 lst2 : list nat,
   nonzeros (lst1 ++ lst2) = (nonzeros lst1) ++ (nonzeros lst2).
-Proof. (* FILL IN HERE *) Admitted.
-
-(** [] *)
+Proof.
+  induction lst1
+  ; intros
+  ; try reflexivity
+  ; simpl
+  ; destruct x
+  ; simpl
+  ; rewrite IHlst1
+  ; reflexivity
+  .
+Qed.
 
 (** Using [try] and [;] together, we can improve the proof about
     regular expression optimization. *)
@@ -283,9 +304,14 @@ Qed.
 
 Theorem add_assoc' : forall n m p : nat,
     n + (m + p) = (n + m) + p.
-Proof. (* FILL IN HERE *) Admitted.
-
-(** [] *)
+Proof.
+  induction n
+  ; intros
+  ; simpl
+  ; [idtac | rewrite IHn ]
+  ; reflexivity
+  .
+Qed.
 
 (** We can use the local form of the sequence tactical to give a
     slightly neater version of our optimization proof. Two lines
@@ -352,9 +378,7 @@ Qed.
     Prove that 100 is even. Your proof script should be quite short. *)
 
 Theorem ev100: ev 100.
-Proof. (* FILL IN HERE *) Admitted.
-
-(** [] *)
+Proof. repeat constructor. Qed.
 
 (* ================================================================= *)
 (** ** An Optimization Exercise  *)
@@ -587,7 +611,33 @@ Qed.
 Lemma re_opt_match' : forall T (re: reg_exp T) s,
   s =~ re -> s =~ re_opt re.
 Proof.
-(* FILL IN HERE *) Admitted.
+  intros T re s M.
+  induction M
+    as [| x'
+        | s1 re1 s2 re2 Hmatch1 IH1 Hmatch2 IH2
+        | s1 re1 re2 Hmatch IH | re1 s2 re2 Hmatch IH
+        | re | s1 s2 re Hmatch1 IH1 Hmatch2 IH2].
+  - (* MEmpty *) simpl. apply MEmpty.
+  - (* MChar *)  simpl. apply MChar.
+  - (* MApp *) simpl.
+    destruct re1
+      ; try (destruct re2; try (apply MApp; assumption); inversion IH2; rewrite app_nil_r; apply IH1)
+    .
+    + inversion IH1. simpl. destruct re2; apply IH2.
+  - (* MUnionL *) simpl.
+    destruct re1
+      ; try (destruct re2; try constructor; assumption)
+      ; inversion IH.
+  - (* MUnionR *) simpl.
+    destruct re1
+      ; try assumption
+      ; destruct re2; try (constructor ; apply IH); inversion IH.
+ - (* MStar0 *) simpl. destruct re; constructor.
+ - (* MStarApp *) simpl.
+   destruct re; try (apply star_app; [apply MStar1|]; assumption); inversion IH1.
+   + inversion IH2. apply MEmpty.
+Qed.
+
 (* Do not modify the following line: *)
 Definition manual_grade_for_re_opt : option (nat*string) := None.
 (** [] *)
@@ -922,20 +972,20 @@ Qed.
 
 Theorem plus_id_exercise_from_basics : forall n m o : nat,
   n = m -> m = o -> n + m = m + o.
-Proof. (* FILL IN HERE *) Admitted.
+Proof. lia. Qed.
 
 Theorem add_assoc_from_induction : forall n m p : nat,
     n + (m + p) = (n + m) + p.
-Proof. (* FILL IN HERE *) Admitted.
+Proof. lia. Qed.
 
 Theorem S_injective_from_tactics : forall (n m : nat),
   S n = S m ->
   n = m.
-Proof. (* FILL IN HERE *) Admitted.
+Proof. lia. Qed.
 
 Theorem or_distributes_over_and_from_logic : forall P Q R : Prop,
     P \/ (Q /\ R) <-> (P \/ Q) /\ (P \/ R).
-Proof. (* FILL IN HERE *) Admitted.
+Proof. intuition. Qed.
 
 (** [] *)
 
@@ -1137,7 +1187,33 @@ Qed.
 Lemma re_opt_match'' : forall T (re: reg_exp T) s,
   s =~ re -> s =~ re_opt re.
 Proof.
-(* FILL IN HERE *) Admitted.
+  intros T re s M.
+  induction M
+    as [| x'
+        | s1 re1 s2 re2 Hmatch1 IH1 Hmatch2 IH2
+        | s1 re1 re2 Hmatch IH | re1 s2 re2 Hmatch IH
+        | re | s1 s2 re Hmatch1 IH1 Hmatch2 IH2].
+  - (* MEmpty *) simpl. constructor.
+  - (* MChar *)  simpl. constructor.
+  - (* MApp *) simpl.
+    destruct re1
+      ; try (destruct re2; try (apply MApp; assumption); inversion IH2; rewrite app_nil_r; auto)
+    .
+    + inversion IH1. simpl. destruct re2; auto.
+  - (* MUnionL *) simpl.
+    destruct re1
+      ; try (destruct re2; try constructor; assumption)
+      ; inversion IH.
+  - (* MUnionR *) simpl.
+    destruct re1
+      ; try assumption
+      ; destruct re2; try (constructor ; apply IH); inversion IH.
+ - (* MStar0 *) simpl. destruct re; constructor.
+ - (* MStarApp *) simpl.
+   destruct re; try (apply star_app; [apply MStar1|]; assumption); inversion IH1.
+   + inversion IH2. constructor.
+Qed.
+
 (* Do not modify the following line: *)
 Definition manual_grade_for_re_opt_match'' : option (nat*string) := None.
 (** [] *)

@@ -19,3 +19,4 @@ The following are complete or parially complete:
 - [Rel.v](lf/Rel.v)
 - [Imp.v](lf/Imp.v) (partial)
 - [ImpCEvalFun.v](lf/ImpCEvalFun.v)
+- [AltAuto.v](lf/AltAuto.v) (partial)
