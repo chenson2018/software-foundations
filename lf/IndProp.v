@@ -974,31 +974,54 @@ Proof.
 Theorem leb_complete : forall n m,
   n <=? m = true -> n <= m.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  induction n.
+  - intros. apply O_le_n.
+  - destruct m.
+    + simpl. intros. inversion H.
+    + simpl. intros. apply n_le_m__Sn_le_Sm. apply IHn. apply H.
+Qed.      
 
 Lemma leb_0: forall n, (0 <=? n) = true.
 Proof.
-Admitted.
+  induction n; reflexivity.
+Qed.
+
+Search (_ <=? _).
 
 Theorem leb_correct : forall n m,
   n <= m ->
   n <=? m = true.
   (** Hint: May be easiest to prove by induction on [m]. *)
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  generalize dependent n.
+  induction m.
+  - intros. inversion H. simpl. reflexivity.
+  - intros. destruct n.
+    + simpl. reflexivity.
+    + simpl. apply IHm. apply Sn_le_Sm__n_le_m in H. apply H.
+Qed.
 
 (** Hint: The next two can easily be proved without using [induction]. *)
 
 Theorem leb_iff : forall n m,
   n <=? m = true <-> n <= m.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  split.
+  apply leb_complete.
+  apply leb_correct.
+Qed.  
 
 Theorem leb_true_trans : forall n m o,
   n <=? m = true -> m <=? o = true -> n <=? o = true.
 Proof.
-  (* FILL IN HERE *) Admitted.
-(** [] *)
+  intros.
+  apply leb_complete in H.
+  apply leb_complete in H0.
+  apply leb_correct.
+  apply (le_trans _ _ _ H H0).
+Qed.
 
 Module R.
 
