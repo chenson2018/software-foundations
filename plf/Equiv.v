@@ -1204,9 +1204,25 @@ Proof.
        become constants after folding *)
       simpl. destruct (n =? n0); reflexivity.
   - (* BLe *)
-    (* FILL IN HERE *) admit.
+    simpl.
+    remember (fold_constants_aexp a1) as a1' eqn:Heqa1'.
+    remember (fold_constants_aexp a2) as a2' eqn:Heqa2'.
+    replace (aeval st a1) with (aeval st a1') by
+       (subst a1'; rewrite <- fold_constants_aexp_sound; reflexivity).
+    replace (aeval st a2) with (aeval st a2') by
+       (subst a2'; rewrite <- fold_constants_aexp_sound; reflexivity).
+    destruct a1'; destruct a2'; try reflexivity.
+    destruct (n <=? n0) eqn:E; simpl; assumption.
   - (* BGt *)
-    (* FILL IN HERE *) admit.
+    simpl.
+    remember (fold_constants_aexp a1) as a1' eqn:Heqa1'.
+    remember (fold_constants_aexp a2) as a2' eqn:Heqa2'.
+    replace (aeval st a1) with (aeval st a1') by
+       (subst a1'; rewrite <- fold_constants_aexp_sound; reflexivity).
+    replace (aeval st a2) with (aeval st a2') by
+       (subst a2'; rewrite <- fold_constants_aexp_sound; reflexivity).
+    destruct a1'; destruct a2'; try reflexivity.
+    destruct (n <=? n0) eqn:E; simpl; rewrite E; reflexivity.
   - (* BNot *)
     simpl. remember (fold_constants_bexp b) as b' eqn:Heqb'.
     rewrite IHb.
@@ -1217,8 +1233,7 @@ Proof.
     remember (fold_constants_bexp b2) as b2' eqn:Heqb2'.
     rewrite IHb1. rewrite IHb2.
     destruct b1'; destruct b2'; reflexivity.
-(* FILL IN HERE *) Admitted.
-(** [] *)
+Qed.
 
 (** **** Exercise: 3 stars, standard (fold_constants_com_sound)
 
@@ -1284,21 +1299,102 @@ Proof.
      optimize_0plus_com
 *)
 
-Fixpoint optimize_0plus_aexp (a : aexp) : aexp
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Fixpoint optimize_0plus_aexp (a : aexp) : aexp :=
+  match a with
+  | AId _ => a
+  | ANum n =>
+      ANum n
+  | <{ 0 + a2 }> =>
+      optimize_0plus_aexp a2
+  | <{ a1 + a2 }> =>
+      <{ (optimize_0plus_aexp a1) + (optimize_0plus_aexp a2) }>
+  | <{ a1 - a2 }> =>
+      <{ (optimize_0plus_aexp a1) - (optimize_0plus_aexp a2) }>
+  | <{ a1 * a2 }> =>
+      <{ (optimize_0plus_aexp a1) * (optimize_0plus_aexp a2) }>
+  end.
 
-Fixpoint optimize_0plus_bexp (b : bexp) : bexp
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Fixpoint optimize_0plus_bexp (b : bexp) : bexp :=
+  match b with
+  | <{true}>        => <{true}>
+  | <{false}>       => <{false}>
+  | <{ a1 = a2 }>  =>
+      match (optimize_0plus_aexp a1,
+             optimize_0plus_aexp a2) with
+      | (ANum n1, ANum n2) =>
+          if n1 =? n2 then <{true}> else <{false}>
+      | (a1', a2') =>
+          <{ a1' = a2' }>
+      end
+  | <{ a1 <> a2 }>  =>
+      match (optimize_0plus_aexp a1,
+             optimize_0plus_aexp a2) with
+      | (ANum n1, ANum n2) =>
+          if negb (n1 =? n2) then <{true}> else <{false}>
+      | (a1', a2') =>
+          <{ a1' <> a2' }>
+      end
+  | <{ a1 <= a2 }>  =>
+      match (optimize_0plus_aexp a1,
+             optimize_0plus_aexp a2) with
+      | (ANum n1, ANum n2) =>
+          if n1 <=? n2 then <{true}> else <{false}>
+      | (a1', a2') =>
+          <{ a1' <= a2' }>
+      end
+  | <{ a1 > a2 }>  =>
+      match (optimize_0plus_aexp a1,
+             optimize_0plus_aexp a2) with
+      | (ANum n1, ANum n2) =>
+          if n1 <=? n2 then <{false}> else <{true}>
+      | (a1', a2') =>
+          <{ a1' > a2' }>
+      end
+  | <{ ~ b1 }>  =>
+      match (optimize_0plus_bexp b1) with
+      | <{true}> => <{false}>
+      | <{false}> => <{true}>
+      | b1' => <{ ~ b1' }>
+      end
+  | <{ b1 && b2 }>  =>
+      match (optimize_0plus_bexp b1,
+             optimize_0plus_bexp b2) with
+      | (<{true}>, <{true}>) => <{true}>
+      | (<{true}>, <{false}>) => <{false}>
+      | (<{false}>, <{true}>) => <{false}>
+      | (<{false}>, <{false}>) => <{false}>
+      | (b1', b2') => <{ b1' && b2' }>
+      end
+  end.
 
-Fixpoint optimize_0plus_com (c : com) : com
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Fixpoint optimize_0plus_com (c : com) : com :=
+  match c with
+  | <{ skip }> =>
+      <{ skip }>
+  | <{ x := a }> =>
+      <{ x := (optimize_0plus_aexp a) }>
+  | <{ c1 ; c2 }>  =>
+      <{ optimize_0plus_com c1 ; optimize_0plus_com c2 }>
+  | <{ if b then c1 else c2 end }> =>
+      match optimize_0plus_bexp b with
+      | <{true}>  => optimize_0plus_com c1
+      | <{false}> => optimize_0plus_com c2
+      | b' => <{ if b' then optimize_0plus_com c1
+                       else optimize_0plus_com c2 end}>
+      end
+  | <{ while b do c1 end }> =>
+      match optimize_0plus_bexp b with
+      | <{true}> => <{ while true do skip end }>
+      | <{false}> => <{ skip }>
+      | b' => <{ while b' do (optimize_0plus_com c1) end }>
+      end
+  end.
 
 Example test_optimize_0plus:
     optimize_0plus_com
        <{ while X <> 0 do X := 0 + X - 1 end }>
   =    <{ while X <> 0 do X := X - 1 end }>.
-Proof.
-  (* FILL IN HERE *) Admitted.
+Proof. reflexivity. Qed.
 
 (** Prove that these three functions are sound, as we did for
     [fold_constants_*].  Make sure you use the congruence lemmas in the
@@ -1307,7 +1403,28 @@ Proof.
 Theorem optimize_0plus_aexp_sound:
   atrans_sound optimize_0plus_aexp.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold atrans_sound.
+  intros. unfold aequiv. intros.
+  induction a
+  ; simpl
+  ; try reflexivity
+  
+  ; try 
+      (
+          destruct (optimize_0plus_aexp a1)
+        ; destruct (optimize_0plus_aexp a2)
+        ; rewrite IHa1
+        ; rewrite IHa2
+        ; reflexivity
+      )
+  .
+  - destruct a1 eqn:E
+    ; try (try (rewrite IHa1) ; rewrite IHa2; reflexivity)
+  .
+    + destruct n.
+      * assumption.
+      * rewrite IHa2. reflexivity.
+Qed.
 
 Theorem optimize_0plus_bexp_sound :
   btrans_sound optimize_0plus_bexp.
