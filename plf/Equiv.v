@@ -176,8 +176,14 @@ Theorem skip_right : forall c,
     <{ c ; skip }>
     c.
 Proof.
-  (* FILL IN HERE *) Admitted.
-(** [] *)
+  intros c st st'.
+  split; intros.
+  - inversion H. subst.
+    inversion H5. subst. assumption.
+  - apply E_Seq with st'.
+    + assumption.
+    + constructor.
+Qed.
 
 (** Similarly, here is a simple equivalence that optimizes [if]
     commands: *)
@@ -268,21 +274,50 @@ Theorem if_false : forall b c1 c2,
     <{ if b then c1 else c2 end }>
     c2.
 Proof.
-  (* FILL IN HERE *) Admitted.
-(** [] *)
+  intros.
+  split; intros.
+  - inversion H0; subst.
+    + unfold bequiv in H. simpl in H.
+      rewrite H in H6. discriminate.
+    + assumption.
+  - apply E_IfFalse.
+    + unfold bequiv in H. simpl in H.
+      apply H.
+    + assumption.
+Qed.
 
 (** **** Exercise: 3 stars, standard (swap_if_branches)
 
     Show that we can swap the branches of an [if] if we also negate its
     condition. *)
 
+Search (negb _).
+
 Theorem swap_if_branches : forall b c1 c2,
   cequiv
     <{ if b then c1 else c2 end }>
     <{ if ~ b then c2 else c1 end }>.
 Proof.
-  (* FILL IN HERE *) Admitted.
-(** [] *)
+  unfold cequiv.
+  unfold bequiv.
+  split; intros.
+  + inversion H
+    ; subst
+    ; [apply E_IfFalse | apply E_IfTrue]
+    ; try assumption
+    ; simpl
+    ; rewrite H5 (* beval st b = true | false *)
+    ; reflexivity
+    .
+  + inversion H
+    ; subst
+    ; [apply E_IfFalse | apply E_IfTrue]
+    ; try assumption
+    ; simpl in H5
+    ; apply negb_true_iff in H5
+    ; [assumption | rewrite <- H5; apply negb_involutive_reverse ]
+    .
+Qed.
 
 (** For [while] loops, we can give a similar pair of theorems.  A loop
     whose guard is equivalent to [false] is equivalent to [skip],
@@ -378,14 +413,29 @@ Proof.
     Prove the following theorem. _Hint_: You'll want to use
     [while_true_nonterm] here. *)
 
+(* I like this style, but it makes it hard to inspect afterwards... *)
+
 Theorem while_true : forall b c,
   bequiv b <{true}>  ->
   cequiv
     <{ while b do c end }>
     <{ while true do skip end }>.
 Proof.
-  (* FILL IN HERE *) Admitted.
-(** [] *)
+  unfold cequiv.
+  assert (H': bequiv <{ true }> <{ true }>).
+  { constructor. }
+  split
+  ; intros
+  ; [ rename H into contra | rename H' into contra]
+  ; [
+        apply (while_true_nonterm b     c     st st') in contra
+      | apply (while_true_nonterm BTrue CSkip st st') in contra
+    ]
+  ; exfalso
+  ; apply contra
+  ; assumption
+  .
+Qed.
 
 (** A more interesting fact about [while] commands is that any number
     of copies of the body can be "unrolled" without changing meaning.
@@ -428,8 +478,17 @@ Proof.
 Theorem seq_assoc : forall c1 c2 c3,
   cequiv <{(c1;c2);c3}> <{c1;(c2;c3)}>.
 Proof.
-  (* FILL IN HERE *) Admitted.
-(** [] *)
+  unfold cequiv.
+  split; intros.
+  + inversion H. subst. inversion H2. subst.
+    assert (H': st'1 =[ c2; c3 ]=> st').
+    { apply E_Seq with st'0; assumption. }
+    apply E_Seq with st'1; assumption.
+  + inversion H. subst. inversion H5. subst.
+    assert (H': st =[ c1; c2 ]=> st'1).
+    { apply E_Seq with st'0; assumption. }
+    apply E_Seq with st'1; assumption.
+Qed.    
 
 (** Proving program properties involving assignments is one place
     where the fact that program states are treated extensionally
@@ -457,8 +516,20 @@ Theorem assign_aequiv : forall (X : string) (a : aexp),
   aequiv <{ X }> a ->
   cequiv <{ skip }> <{ X := a }>.
 Proof.
-  (* FILL IN HERE *) Admitted.
-(** [] *)
+  split; intros.
+  + unfold aequiv in H.
+    inversion H0. subst.
+    assert (H': aeval st' X = aeval st' a).
+    { apply H. }
+    simpl in H'.
+    rewrite <- (t_update_same _ st' X) at 2.
+    apply E_Asgn.
+    symmetry. assumption.
+  + unfold aequiv in H.
+    inversion H0. subst.
+    rewrite <- H. rewrite t_update_same.
+    constructor.
+Qed.    
 
 (** **** Exercise: 2 stars, standard (equiv_classes) *)
 
@@ -715,8 +786,20 @@ Theorem CSeq_congruence : forall c1 c1' c2 c2',
   cequiv c1 c1' -> cequiv c2 c2' ->
   cequiv <{ c1;c2 }> <{ c1';c2' }>.
 Proof.
-  (* FILL IN HERE *) Admitted.
-(** [] *)
+  unfold cequiv. 
+  split
+  ; intros
+  ; inversion H1
+  ; subst
+  ; [
+      apply (E_Seq c1' c2' st st'0 st') 
+    | apply (E_Seq c1  c2  st st'0 st') 
+    ]
+  ; try (apply H0)
+  ; try (apply H)
+  ; assumption
+  .
+Qed.
 
 (** **** Exercise: 3 stars, standard (CIf_congruence) *)
 Theorem CIf_congruence : forall b b' c1 c1' c2 c2',
@@ -724,8 +807,24 @@ Theorem CIf_congruence : forall b b' c1 c1' c2 c2',
   cequiv <{ if b then c1 else c2 end }>
          <{ if b' then c1' else c2' end }>.
 Proof.
-  (* FILL IN HERE *) Admitted.
-(** [] *)
+  unfold bequiv.
+  unfold cequiv.
+  split; intros.
+  + inversion H2; subst.
+    * apply E_IfTrue.
+      ** rewrite H in H8. assumption.
+      ** apply H0. assumption.
+    * apply E_IfFalse.
+      ** rewrite H in H8. assumption.
+      ** apply H1. assumption.
+  + inversion H2; subst.
+    * apply E_IfTrue.
+      ** rewrite <- H in H8. assumption.
+      ** apply H0. assumption.
+    * apply E_IfFalse.
+      ** rewrite <- H in H8. assumption.
+      ** apply H1. assumption.
+Qed.         
 
 (** For example, here are two equivalent programs and a proof of their
     equivalence... *)
