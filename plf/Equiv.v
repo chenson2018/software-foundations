@@ -1839,8 +1839,8 @@ Inductive ceval : com -> state -> state -> Prop :=
       st  =[ c ]=> st' ->
       st' =[ while b do c end ]=> st'' ->
       st  =[ while b do c end ]=> st''
-(* FILL IN HERE *)
-
+  | E_HAVOC : forall st x n,
+      st =[ havoc x ]=> (x !-> n; st)
   where "st =[ c ]=> st'" := (ceval c st st').
 
 (** As a sanity check, the following claims should be provable for
@@ -1848,12 +1848,14 @@ Inductive ceval : com -> state -> state -> Prop :=
 
 Example havoc_example1 : empty_st =[ havoc X ]=> (X !-> 0).
 Proof.
-(* FILL IN HERE *) Admitted.
+  apply E_HAVOC.
+Qed. 
 
 Example havoc_example2 :
   empty_st =[ skip; havoc Z ]=> (Z !-> 42).
 Proof.
-(* FILL IN HERE *) Admitted.
+  apply E_Seq with empty_st; constructor.
+Qed.
 
 (* Do not modify the following line: *)
 Definition manual_grade_for_Check_rule_for_HAVOC : option (nat*string) := None.
@@ -1883,11 +1885,37 @@ Definition pYX :=
 Theorem pXY_cequiv_pYX :
   cequiv pXY pYX \/ ~cequiv pXY pYX.
 Proof.
+  unfold cequiv.
+  unfold pXY.
+  unfold pYX.
+  left.
+  intros.
+  split.
+  - intros.
+    inversion H.
+    inversion H2.
+    inversion H5.
+    subst.
+    apply E_Seq with (Y !-> n0; st).
+    + constructor.
+    + rewrite t_update_permute.
+      * constructor.
+      * discriminate.
+  - intros.
+    inversion H.
+    inversion H2.
+    inversion H5.
+    subst.
+    apply E_Seq with (X !-> n0; st).
+    + constructor.
+    + rewrite t_update_permute.
+      * constructor.
+      * discriminate.
+Qed.        
+
   (* Hint: You may want to use [t_update_permute] at some point,
      in which case you'll probably be left with [X <> Y] as a
      hypothesis. You can use [discriminate] to discharge this. *)
-  (* FILL IN HERE *) Admitted.
-(** [] *)
 
 (** **** Exercise: 4 stars, standard, optional (havoc_copy)
 
@@ -1905,8 +1933,8 @@ Definition pcopy :=
 
 Theorem ptwice_cequiv_pcopy :
   cequiv ptwice pcopy \/ ~cequiv ptwice pcopy.
-Proof. (* FILL IN HERE *) Admitted.
-(** [] *)
+Proof.
+Admitted.
 
 (** The definition of program equivalence we are using here has some
     subtle consequences on programs that may loop forever.  What
