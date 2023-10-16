@@ -1526,8 +1526,13 @@ Inductive ceval : com -> state -> state -> Prop :=
       st  =[ c ]=> st' ->
       st' =[ while b do c end ]=> st'' ->
       st  =[ while b do c end ]=> st''
-(* FILL IN HERE *)
-
+  | E_If1True : forall st st' b c,
+      beval st b = true ->
+      st =[ c ]=> st' ->
+      st =[ if1 b then c end ]=> st'
+  | E_If1False : forall st b c,
+      beval st b = false ->
+      st =[ if1 b then c end ]=> st
 where "st '=[' c ']=>' st'" := (ceval c st st').
 
 Hint Constructors ceval : core.
@@ -1537,13 +1542,18 @@ Hint Constructors ceval : core.
 
 Example if1true_test :
   empty_st =[ if1 X = 0 then X := 1 end ]=> (X !-> 1).
-Proof. (* FILL IN HERE *) Admitted.
+Proof. 
+  constructor.
+  - reflexivity.
+  - constructor. reflexivity.
+Qed.
 
 Example if1false_test :
   (X !-> 2) =[ if1 X = 0 then X := 1 end ]=> (X !-> 2).
-Proof. (* FILL IN HERE *) Admitted.
-
-(** [] *)
+Proof.
+  apply E_If1False.
+  reflexivity.
+Qed.  
 
 (** Now we have to repeat the definition and notation of Hoare triples,
     so that they will use the updated [com] type. *)
@@ -1578,6 +1588,25 @@ Notation "{{ P }}  c  {{ Q }}" := (hoare_triple P c Q)
     parsed as an assertion, write it as [(e)%assertion]. *)
 
 (* FILL IN HERE *)
+
+Theorem hoare_if1 : forall P Q (b:bexp) c,
+  {{ P /\ b }} c {{Q}} ->
+  {{ P /\ ~ b}} skip {{Q}} ->  (* could this use True??? *)
+  {{P}} if1 b then c end {{Q}}.
+Proof.
+  intros P Q b c HTrue HFalse st st' HE HP.
+  inversion HE.
+  - apply (HTrue st st').
+    + assumption.
+    + split; assumption.
+  - apply (HFalse st st').
+    + subst. constructor.
+    + subst. split.
+      * assumption.
+      * unfold not. intros.
+        inversion H.
+        congruence.
+Qed.
 
 (** For full credit, prove formally [hoare_if1_good] that your rule is
     precise enough to show the following valid Hoare triple:
@@ -1626,8 +1655,21 @@ Lemma hoare_if1_good :
       X := X + Y
     end
   {{ X = Z }}.
-Proof. (* FILL IN HERE *) Admitted.
-(** [] *)
+Proof.
+  apply hoare_if1.
+  - simpl. 
+    unfold hoare_triple.
+    intros. destruct H0.
+    inversion H.
+    subst. simpl.
+    rewrite H0.
+    reflexivity.
+  - simpl. unfold hoare_triple. intros. destruct H0. inversion H. subst. rewrite <- H0.
+    apply eq_true_negb_classical in H1.
+    apply eqb_eq in H1.
+    rewrite H1.
+    lia.
+Qed.
 
 End If1.
 
