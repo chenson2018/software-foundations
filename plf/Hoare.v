@@ -1089,16 +1089,20 @@ Example assn_sub_ex1' :
     X := 2 * X
   {{ X <= 10 }}.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  eapply hoare_consequence_pre.
+  - apply hoare_asgn.
+  - assn_auto.
+Qed.  
 
 Example assn_sub_ex2' :
   {{ 0 <= 3 /\ 3 <= 5 }}
     X := 3
   {{ 0 <= X /\ X <= 5 }}.
 Proof.
-  (* FILL IN HERE *) Admitted.
-
-(** [] *)
+  eapply hoare_consequence_pre.
+  - apply hoare_asgn.
+  - assn_auto.
+Qed.
 
 (* ================================================================= *)
 (** ** Sequencing + Assignment *)
@@ -1160,9 +1164,13 @@ Example hoare_asgn_example4 :
   {{ X = 1 /\ Y = 2 }}.
 Proof.
   apply hoare_seq with (Q := (X = 1)%assertion).
-  (* The annotation [%assertion] is needed here to help Coq parse correctly. *)
-  (* FILL IN HERE *) Admitted.
-(** [] *)
+  - eapply hoare_consequence_pre.
+    + apply hoare_asgn.
+    + assn_auto.
+  - eapply hoare_consequence_pre.
+    + apply hoare_asgn.
+    + assn_auto.
+Qed.  
 
 (** **** Exercise: 3 stars, standard (swap_exercise)
 
@@ -1177,8 +1185,7 @@ Proof.
     your proof will want to start at the end and work back to the
     beginning of your program.)  *)
 
-Definition swap_program : com
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Definition swap_program : com := <{ Z := X; X := Y; Y := Z }>.
 
 Theorem swap_exercise :
   {{X <= Y}}
@@ -1225,8 +1232,18 @@ Theorem invalid_triple : ~ forall (a : aexp) (n : nat),
 Proof.
   unfold hoare_triple.
   intros H.
-  (* FILL IN HERE *) Admitted.
-(** [] *)
+  specialize H with <{X + Y}> 0 empty_st (Y !-> 3; X !-> 3).
+
+  assert (H': empty_st =[ X := 3; Y := X + Y ]=> (Y !-> 3; X !-> 3)).
+  { 
+    apply E_Seq with (X !-> 3).
+    + constructor. reflexivity.
+    + constructor. reflexivity.
+  }
+  apply H in H'.
+  - simpl in H'. rewrite t_update_eq in H'. inversion H'.
+  - simpl. reflexivity.
+Qed.  
 
 (* ================================================================= *)
 (** ** Conditionals *)
@@ -1410,6 +1427,8 @@ Ltac assn_auto'' :=
     Prove the theorem below using [hoare_if].  Do not use [unfold
     hoare_triple]. *)
 
+Search ((_ <=? _) = true).
+
 Theorem if_minus_plus :
   {{True}}
     if (X <= Y)
@@ -1418,8 +1437,12 @@ Theorem if_minus_plus :
     end
   {{Y = X + Z}}.
 Proof.
-  (* FILL IN HERE *) Admitted.
-(** [] *)
+  apply hoare_if; eapply hoare_consequence_pre;
+    try apply hoare_asgn; try assn_auto'. 
+    rewrite <- (Arith_prebase.le_plus_minus_stt (st X) (st Y)).
+    + reflexivity.
+    + destruct H. apply leb_complete in H0. assumption.
+Qed.      
 
 (* ----------------------------------------------------------------- *)
 (** *** Exercise: One-sided conditionals *)
