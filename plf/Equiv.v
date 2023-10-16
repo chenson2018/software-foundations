@@ -1711,9 +1711,12 @@ Qed.
 (** Using [var_not_used_in_aexp], formalize and prove a correct version
     of [subst_equiv_property]. *)
 
-(* FILL IN HERE
-
-    [] *)
+Theorem subst_equiv_property' : forall x1 x2 a1 a2,
+  var_not_used_in_aexp x1 a1 ->
+  cequiv <{ x1 := a1; x2 := a2 }>
+         <{ x1 := a1; x2 := subst_aexp x1 a1 a2 }>.
+Proof.
+Admitted.
 
 (** **** Exercise: 3 stars, standard (inequiv_exercise)
 
@@ -1722,8 +1725,20 @@ Qed.
 Theorem inequiv_exercise:
   ~ cequiv <{ while true do skip end }> <{ skip }>.
 Proof.
-  (* FILL IN HERE *) Admitted.
-(** [] *)
+  unfold not.
+  unfold cequiv.
+  intros.
+  assert (H': empty_st =[ skip ]=> empty_st).
+  { constructor. }
+  apply H in H'.
+  inversion H'.
+  + subst. inversion H3.
+  + subst. 
+    assert (H'': bequiv <{ true}> <{ true }>).
+    { unfold bequiv. intros. reflexivity. }
+    apply (while_true_nonterm <{ true }> <{ skip }> empty_st empty_st H'').
+    assumption.
+Qed.    
 
 (* ################################################################# *)
 (** * Extended Exercise: Nondeterministic Imp *)
@@ -1934,7 +1949,42 @@ Definition pcopy :=
 Theorem ptwice_cequiv_pcopy :
   cequiv ptwice pcopy \/ ~cequiv ptwice pcopy.
 Proof.
-Admitted.
+  right.
+  unfold not.
+  unfold ptwice.
+  unfold pcopy.
+  unfold cequiv.
+  intros.
+  assert (H': empty_st =[ havoc X; havoc Y ]=> (Y !-> 10; X !-> 5)).
+  { apply E_Seq with (X !-> 5); constructor. }
+  apply H in H'.
+  inversion H'.
+  inversion H2.
+  inversion H5.
+  subst.
+  inversion H13.
+  rewrite t_update_eq in H1.  
+
+  assert (H'': (Y !-> n; X !-> n) Y = n).
+  { apply t_update_eq. }
+
+  assert (H''': (Y !-> 10; X !-> 5) Y = 10).
+  { apply t_update_eq. }
+
+  assert (H'''': (Y !-> n; X !-> n) X = n).
+  { rewrite t_update_permute. 
+    + apply t_update_eq. 
+    + unfold not. intros. inversion H0.
+  }
+
+  assert (H''''': (Y !-> 10; X !-> 5) X = 5).
+  { rewrite t_update_permute. 
+    + apply t_update_eq. 
+    + unfold not. intros. inversion H0.
+  }
+
+  congruence.
+Qed.  
 
 (** The definition of program equivalence we are using here has some
     subtle consequences on programs that may loop forever.  What
@@ -1969,7 +2019,8 @@ Definition p2 : com :=
 
 Lemma p1_may_diverge : forall st st', st X <> 0 ->
   ~ st =[ p1 ]=> st'.
-Proof. (* FILL IN HERE *) Admitted.
+Proof. 
+(* FILL IN HERE *) Admitted.
 
 Lemma p2_may_diverge : forall st st', st X <> 0 ->
   ~ st =[ p2 ]=> st'.
@@ -1982,9 +2033,40 @@ Proof.
     Use these two lemmas to prove that [p1] and [p2] are actually
     equivalent. *)
 
+Search (negb _ = true).
+
+Lemma while_false': forall st st' b c, 
+  beval st b = false ->
+  st =[ while b do c end ]=> st' ->
+  st = st'.
+Proof.
+  intros.
+  inversion H0.
+  - reflexivity.
+  - subst. congruence.
+Qed.    
+
 Theorem p1_p2_equiv : cequiv p1 p2.
-Proof. (* FILL IN HERE *) Admitted.
-(** [] *)
+Proof. 
+  unfold cequiv.
+  unfold p1.
+  unfold p2.
+  intros.
+  destruct (st X =? 0) eqn:E.
+  - assert (H'': beval st <{ ~ X = 0 }> = false).
+    { unfold beval. simpl. apply negb_false_iff. assumption. } 
+    split; intros.
+    + apply while_false' in H.
+      * subst. constructor. assumption.
+      * assumption.
+    + apply while_false' in H.
+      * subst. constructor. assumption.
+      * assumption.
+  - apply eqb_neq in E.
+    + split; intros.
+      * apply p1_may_diverge with st st' in E. exfalso. apply E. apply H.
+      * apply p2_may_diverge with st st' in E. exfalso. apply E. apply H.
+Qed.
 
 (** **** Exercise: 4 stars, advanced (p3_p4_inequiv)
 
