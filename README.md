@@ -9,4 +9,4 @@ All exercises are complete except a few questions in IndProp.v, Imp.v, and AltAu
 ## Programming Language Foundations
 
 - [Equiv.v](plf/Equiv.v) (partial)
-- [Hoare.v](plf/Hoare.v) (partial)
+- [Hoare.v](plf/Hoare.v)
