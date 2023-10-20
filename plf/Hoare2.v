@@ -1576,17 +1576,17 @@ Compute fact 5. (* ==> 120 *)
 Example factorial_dec (m:nat) : decorated :=
 <{
     {{ X = m }}
-       Y := 
-                {{  X = m /\ Y = 1 }} ->>
-                {{ True }};
+       Y := 1
+                {{ X = m /\ Y = 1   }} ->>
+                {{ FILL_IN_HERE }};
       while X <> 1
       do
-              {{ True /\ X <> 1 }} ->>
+              {{ FILL_IN_HERE /\ X <> 1 }} ->>
               {{ True }}
-        Y := Y * X {{ True }};
-        X := X - 1 {{ True }}
+        Y := Y * X {{ FILL_IN_HERE }};
+        X := X - 1 {{ FILL_IN_HERE }}
       end
-    {{ X * Y = fact m /\ ~(X <> 1) }} ->>
+    {{ FILL_IN_HERE /\ ~(X <> 1) }} ->>
     {{ Y = fact m }}
 }>
 .
