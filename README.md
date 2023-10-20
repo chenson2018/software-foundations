@@ -10,3 +10,4 @@ All exercises are complete except a few questions in IndProp.v, Imp.v, and AltAu
 
 - [Equiv.v](plf/Equiv.v) (partial)
 - [Hoare.v](plf/Hoare.v)
+- [Hoare2.v](plf/Hoare2.v) (partial)

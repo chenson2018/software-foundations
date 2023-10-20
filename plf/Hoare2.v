@@ -974,23 +974,21 @@ Definition if_minus_plus_dec :=
   <{
   {{True}}
   if (X <= Y) then
-              {{ FILL_IN_HERE }} ->>
-              {{ FILL_IN_HERE }}
+              {{ True /\ X <= Y }} ->>
+              {{ Y = X + (Y - X) }}
     Z := Y - X
-              {{ FILL_IN_HERE }}
+              {{ Y = X + Z }}
   else
-              {{ FILL_IN_HERE }} ->>
-              {{ FILL_IN_HERE }}
+              {{ True /\ ~(X <= Y) }} ->>
+              {{ X + Z = X + Z }}
     Y := X + Z
-              {{ FILL_IN_HERE }}
+              {{ Y = X + Z }}
   end
   {{ Y = X + Z}} }>.
 
 Theorem if_minus_plus_correct :
   outer_triple_valid if_minus_plus_dec.
-Proof.
-  (* FILL IN HERE *) Admitted.
-(** [] *)
+Proof. verify. Qed.
 
 (** **** Exercise: 2 stars, standard, optional (div_mod_outer_triple_valid)
 
@@ -999,27 +997,25 @@ Proof.
 Definition div_mod_dec (a b : nat) : decorated :=
   <{
   {{ True }} ->>
-  {{ FILL_IN_HERE }}
+  {{ b * 0 + a = a }}
     X := a
-             {{ FILL_IN_HERE }};
+             {{ b * 0 + X = a }};
     Y := 0
-             {{ FILL_IN_HERE }};
+             {{ b * Y + X = a}};
     while b <= X do
-             {{ FILL_IN_HERE }} ->>
-             {{ FILL_IN_HERE }}
+             {{ b * Y + X = a /\ b <= X }} ->>
+             {{ b * (Y + 1) + (X - b) = a }}
       X := X - b
-             {{ FILL_IN_HERE }};
+             {{ b * (Y + 1) + X = a }};
       Y := Y + 1
-             {{ FILL_IN_HERE }}
+             {{ b * Y + X = a }}
     end
-  {{ FILL_IN_HERE }} ->>
-  {{ FILL_IN_HERE }} }>.
+  {{ b * Y + X = a /\ ~(b <= X) }} ->>
+  {{ b * Y + X = a /\ X < b }} }>.
 
 Theorem div_mod_outer_triple_valid : forall a b,
   outer_triple_valid (div_mod_dec a b).
-Proof.
-  (* FILL IN HERE *) Admitted.
-(** [] *)
+Proof. verify. Qed.
 
 (* ################################################################# *)
 (** * Finding Loop Invariants *)
@@ -1208,8 +1204,7 @@ Example subtract_slowly_dec (m : nat) (p : nat) : decorated :=
 
 Theorem subtract_slowly_outer_triple_valid : forall m p,
   outer_triple_valid (subtract_slowly_dec m p).
-Proof.
-  (* FILL IN HERE *) Admitted.
+Proof. verify. Qed.
 
 (* ================================================================= *)
 (** ** Exercise: Slow Assignment *)
@@ -1226,24 +1221,23 @@ Example slow_assignment_dec (m : nat) : decorated :=
   <{
     {{ X = m }}
       Y := 0
-                    {{ FILL_IN_HERE }} ->>
-                    {{ FILL_IN_HERE }} ;
+                    {{ X = m /\ Y = 0 }} ->>
+                    {{ X + Y = m }};
       while X <> 0 do
-                    {{ FILL_IN_HERE }} ->>
-                    {{ FILL_IN_HERE }}
+                    {{ X + Y = m /\ X <> 0 }} ->>
+                    {{ (X - 1) + (Y + 1) = m }}
          X := X - 1
-                    {{ FILL_IN_HERE }} ;
+                    {{ X + (Y + 1) = m }} ;
          Y := Y + 1
-                    {{ FILL_IN_HERE }}
+                    {{ X + Y = m }}
       end
-    {{ FILL_IN_HERE }} ->>
+    {{ X + Y = m /\ ~(X <> 0) }} ->>
     {{ Y = m }}
   }>.
 
 Theorem slow_assignment : forall m,
   outer_triple_valid (slow_assignment_dec m).
-Proof. (* FILL IN HERE *) Admitted.
-(** [] *)
+Proof. verify. Qed.
 
 (* ================================================================= *)
 (** ** Example: Parity *)
@@ -1308,14 +1302,14 @@ Fixpoint parity x :=
 Definition parity_dec (m:nat) : decorated :=
   <{
   {{ X = m }} ->>
-  {{ FILL_IN_HERE }}
+  {{ ap parity X = parity m }}
     while 2 <= X do
-                  {{ FILL_IN_HERE }} ->>
-                  {{ FILL_IN_HERE }}
+                  {{ ap parity X = parity m /\ 2 <= X }} ->>
+                  {{ ap parity (X - 2) = parity m }}
       X := X - 2
-                  {{ FILL_IN_HERE }}
+                  {{ ap parity X = parity m }}
     end
-  {{ FILL_IN_HERE }} ->>
+  {{ ap parity X = parity m /\ ~(2 <= X) }} ->>
   {{ X = parity m }} }>.
 
 (** If you use the suggested invariant, you may find the following
@@ -1345,10 +1339,22 @@ Qed.
 
 Theorem parity_outer_triple_valid : forall m,
   outer_triple_valid (parity_dec m).
-Proof.
-  (* FILL IN HERE *) Admitted.
-
-(** [] *)
+Proof. verify.
+  - destruct (st X).
+    + inversion H0.
+    + destruct n.
+      * congruence.
+      * lia.
+  - destruct (st X).
+    + lia.
+    + destruct n.
+      * lia.
+      * congruence.
+  - apply parity_ge_2 in H0. rewrite H in H0. assumption.
+  - apply parity_lt_2 in H0.
+    rewrite H0 in H.
+    assumption.
+Qed.
 
 (* ================================================================= *)
 (** ** Example: Finding Square Roots *)
@@ -1427,22 +1433,22 @@ Proof.
 Definition sqrt_dec (m:nat) : decorated :=
   <{
     {{ X = m }} ->>
-    {{ FILL_IN_HERE }}
+    {{ X=m /\ 0*0 <= m }}
       Z := 0
-                   {{ FILL_IN_HERE }};
+                   {{ X=m /\ Z*Z <= m }};
       while ((Z+1)*(Z+1) <= X) do
-                   {{ FILL_IN_HERE }} ->>
-                   {{ FILL_IN_HERE }}
+                   {{ X=m /\ Z*Z<=m /\ (Z+1)*(Z+1)<=X }} ->>
+                   {{ X=m /\ (Z+1)*(Z+1)<=m }}
         Z := Z + 1
-                   {{ FILL_IN_HERE }}
+                   {{ X=m /\ Z*Z<=m }}
       end
-    {{ FILL_IN_HERE }} ->>
+    {{ X=m /\ Z*Z<=m /\ ~((Z+1)*(Z+1)<=X) }} ->>
     {{ Z*Z<=m /\ m<(Z+1)*(Z+1) }}
   }>.
 
 Theorem sqrt_correct : forall m,
   outer_triple_valid (sqrt_dec m).
-Proof. (* FILL IN HERE *) Admitted.
+Proof. verify. Qed.
 
 (* ================================================================= *)
 (** ** Example: Squaring *)
@@ -1565,15 +1571,30 @@ Compute fact 5. (* ==> 120 *)
     For example, recall that [1 + ...] is easier to work with than
     [... + 1]. *)
 
-Example factorial_dec (m:nat) : decorated
-(* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
 
-(* FILL IN HERE *)
+(* WIP *)
+Example factorial_dec (m:nat) : decorated :=
+<{
+    {{ X = m }}
+       Y := 
+                {{  X = m /\ Y = 1 }} ->>
+                {{ True }};
+      while X <> 1
+      do
+              {{ True /\ X <> 1 }} ->>
+              {{ True }}
+        Y := Y * X {{ True }};
+        X := X - 1 {{ True }}
+      end
+    {{ X * Y = fact m /\ ~(X <> 1) }} ->>
+    {{ Y = fact m }}
+}>
+.
 
 Theorem factorial_correct: forall m,
   outer_triple_valid (factorial_dec m).
-Proof. (* FILL IN HERE *) Admitted.
-(** [] *)
+Proof. 
+(* FILL IN HERE *) Admitted.
 
 (* ================================================================= *)
 (** ** Exercise: Minimum *)
