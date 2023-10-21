@@ -1577,24 +1577,34 @@ Example factorial_dec (m:nat) : decorated :=
 <{
     {{ X = m }}
        Y := 1
-                {{ X = m /\ Y = 1   }} ->>
-                {{ FILL_IN_HERE }};
-      while X <> 1
+                {{ X = m /\ Y = 1 }} ->>
+                {{ (ap fact X) * Y = fact m }};
+      while X > 0
       do
-              {{ FILL_IN_HERE /\ X <> 1 }} ->>
-              {{ True }}
-        Y := Y * X {{ FILL_IN_HERE }};
-        X := X - 1 {{ FILL_IN_HERE }}
+              {{ (ap fact (X - 1)) * (X * Y) = fact m  /\ X > 0 }} ->>
+              {{ (ap fact (X - 1)) * (X * Y) = fact m  }}
+        Y := Y * X {{ (ap fact (X - 1)) * Y = fact m  }};
+        X := X - 1 {{ (ap fact X) * Y = fact m  }}
       end
-    {{ FILL_IN_HERE /\ ~(X <> 1) }} ->>
+    {{ (ap fact X) * Y = fact m /\ X = 0 }} ->>
     {{ Y = fact m }}
 }>
 .
 
+Unset Printing All.
+
 Theorem factorial_correct: forall m,
   outer_triple_valid (factorial_dec m).
 Proof. 
-(* FILL IN HERE *) Admitted.
+  verify.
+  - induction (st X).
+    + inversion H0.
+    + rewrite <- H.
+      simpl.
+      rewrite sub_0_r. 
+      lia.
+  - simpl in H. rewrite add_0_r in H. assumption.
+Qed.
 
 (* ================================================================= *)
 (** ** Exercise: Minimum *)
