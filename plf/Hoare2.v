@@ -1686,41 +1686,38 @@ Qed.
 Definition two_loops_dec (a b c : nat) : decorated :=
   <{
     {{ True }} ->>
-    {{ FILL_IN_HERE }}
+    {{ c = 0 + 0 + c }}
       X := 0
-                   {{ FILL_IN_HERE }};
+                   {{ c = X + 0 + c }};
       Y := 0
-                   {{ FILL_IN_HERE }};
+                   {{ c = X + Y + c }};
       Z := c
-                   {{ FILL_IN_HERE }};
+                   {{ Z = X + Y + c }};
       while X <> a do
-                   {{ FILL_IN_HERE }} ->>
-                   {{ FILL_IN_HERE }}
+                   {{ Z = X + Y + c /\ X <> a }} ->>
+                   {{ (Z + 1) = (X + 1) + Y + c }}
         X := X + 1
-                   {{ FILL_IN_HERE }};
+                   {{ (Z + 1) = X + Y + c }};
         Z := Z + 1
-                   {{ FILL_IN_HERE }}
+                   {{ Z = X + Y + c }}
       end
-                   {{ FILL_IN_HERE }} ->>
-                   {{ FILL_IN_HERE }};
+                   {{ Z = X + Y + c  /\ X = a}} ->>
+                   {{ Z = a + Y + c  }};
       while Y <> b do
-                   {{ FILL_IN_HERE }} ->>
-                   {{ FILL_IN_HERE }}
+                   {{ Z = a + Y + c /\ Y <> b}} ->>
+                   {{ (Z + 1) = a + (Y + 1) + c }}
         Y := Y + 1
-                   {{ FILL_IN_HERE }};
+                   {{ (Z + 1) = a + Y + c }};
         Z := Z + 1
-                   {{ FILL_IN_HERE }}
+                   {{ Z = a + Y + c }}
       end
-    {{ FILL_IN_HERE }} ->>
+    {{ Z = a + Y + c /\ Y = b }} ->>
     {{ Z = a + b + c }}
   }>.
 
 Theorem two_loops : forall a b c,
   outer_triple_valid (two_loops_dec a b c).
-Proof.
-  (* FILL IN HERE *) Admitted.
-
-(** [] *)
+Proof. verify. Qed.
 
 (* ================================================================= *)
 (** ** Exercise: Power Series *)
@@ -1880,11 +1877,28 @@ Definition is_wp P c Q :=
     is indeed a weakest precondition of [X := Y + 1] with respect to
     postcondition [X <= 5]. *)
 
+Search (S _ <= S _).
+
 Theorem is_wp_example :
   is_wp (Y <= 4) <{X := Y + 1}> (X <= 5).
 Proof.
-  (* FILL IN HERE *) Admitted.
-(** [] *)
+  unfold is_wp. split.
+  - simpl. unfold hoare_triple. intros.
+    inversion H. subst. simpl in H. simpl. rewrite t_update_eq.
+    rewrite add_1_r.
+    apply le_n_S.
+    assumption.
+  - unfold "->>".
+    unfold hoare_triple.
+    simpl.
+    intros.
+    assert (H': st =[ X := Y + 1 ]=> (X !-> (aeval st Y) + 1; st)).
+    { apply E_Asgn. reflexivity. }
+    apply H in H'.
+    + rewrite t_update_eq in H'. rewrite add_1_r in H'. apply le_S_n in H'.
+      assumption.
+    + assumption.
+Qed.
 
 (** **** Exercise: 2 stars, advanced, optional (hoare_asgn_weakest)
 
@@ -1894,8 +1908,18 @@ Proof.
 Theorem hoare_asgn_weakest : forall Q X a,
   is_wp (Q [X |-> a]) <{ X := a }> Q.
 Proof.
-(* FILL IN HERE *) Admitted.
-(** [] *)
+  unfold is_wp.
+  split.
+  - apply hoare_asgn.
+  - unfold "->>".
+    unfold hoare_triple.
+    intros. 
+    assert (H': st =[ X := a ]=> (X !-> aeval st a; st)).
+    { apply E_Asgn. reflexivity. }
+    apply H in H'.
+    + assumption.
+    + assumption.
+Qed.
 
 (** **** Exercise: 2 stars, advanced, optional (hoare_havoc_weakest)
 
@@ -1908,9 +1932,15 @@ Lemma hoare_havoc_weakest : forall (P Q : Assertion) (X : string),
   {{ P }} havoc X {{ Q }} ->
   P ->> havoc_pre X Q.
 Proof.
-(* FILL IN HERE *) Admitted.
+  unfold havoc_pre, "->>", hoare_triple.
+  intros.
+  specialize H with st (X !-> a; st).
+  apply H.
+  - constructor.
+  - assumption.
+Qed.
+
 End Himp2.
-(** [] *)
 
 (** **** Exercise: 2 stars, advanced, optional (fib_eqn)
 
@@ -1942,8 +1972,10 @@ Lemma fib_eqn : forall n,
   n > 0 ->
   fib n + fib (pred n) = fib (1 + n).
 Proof.
-  (* FILL IN HERE *) Admitted.
-(** [] *)
+  destruct n eqn:E.
+  - intros. inversion H.
+  - intros. reflexivity.
+Qed.
 
 (** **** Exercise: 4 stars, advanced, optional (fib)
 
