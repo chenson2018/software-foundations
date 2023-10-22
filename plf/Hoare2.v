@@ -1622,35 +1622,45 @@ Qed.
     Hint: You may find [andb_true_eq] useful (perhaps after using
     symmetry to get an equality the right way around). *)
 
+Search (_ && _ = false).
+
 Definition minimum_dec (a b : nat) : decorated :=
   <{
     {{ True }} ->>
-    {{ FILL_IN_HERE }}
+    {{ min a b + 0 = min a b }}
       X := a
-             {{ FILL_IN_HERE }};
+             {{ ap2 min X b + 0 = min a b }};
       Y := b
-             {{ FILL_IN_HERE }};
+             {{ ap2 min X Y + 0 = min a b }};
       Z := 0
-             {{ FILL_IN_HERE }};
+             {{ ap2 min X Y + Z = min a b }};
       while X <> 0 && Y <> 0 do
-             {{ FILL_IN_HERE }} ->>
-             {{ FILL_IN_HERE }}
+             {{ (ap2 min X Y + Z = min a b) /\ (X <> 0 /\ Y <> 0) }} ->>
+             {{ ap2 min (X - 1) (Y - 1) + (Z + 1) = min a b }}
         X := X - 1
-             {{ FILL_IN_HERE }};
+             {{ ap2 min X (Y - 1) + (Z + 1) = min a b }};
         Y := Y - 1
-             {{ FILL_IN_HERE }};
+             {{ ap2 min X Y + (Z + 1) = min a b }};
         Z := Z + 1
-             {{ FILL_IN_HERE }}
+             {{ ap2 min X Y + Z = min a b }}
       end
-    {{ FILL_IN_HERE }} ->>
+    {{ ap2 min X Y + Z = min a b /\ (X = 0 \/ Y = 0) }} ->>
     {{ Z = min a b }}
   }>.
 
 Theorem minimum_correct : forall a b,
   outer_triple_valid (minimum_dec a b).
-Proof. (* FILL IN HERE *) Admitted.
-(** [] *)
-
+Proof. verify.
+  - rewrite andb_true_iff in H0.
+    destruct H0. rewrite negb_true_iff in H0. rewrite eqb_neq in H0. assumption.
+  - rewrite andb_true_iff in H0.
+    destruct H0. rewrite negb_true_iff in H1. rewrite eqb_neq in H1. assumption.
+  - rewrite andb_false_iff in H0.
+    repeat (rewrite negb_false_iff in H0).
+    repeat (rewrite eqb_eq in H0).
+    assumption.
+Qed.
+ 
 (* ================================================================= *)
 (** ** Exercise: Two Loops *)
 
