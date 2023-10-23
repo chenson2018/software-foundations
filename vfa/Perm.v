@@ -531,12 +531,19 @@ Check app_assoc.
 Check app_nil_r.
 Check app_comm_cons.
 
+Search (Permutation (_ ++ _)).
+
 Example permut_example: forall (a b: list nat),
   Permutation (5 :: 6 :: a ++ b) ((5 :: b) ++ (6 :: a ++ [])).
 Proof.
-(* FILL IN HERE *) Admitted.
-(** [] *)
-
+  intros.
+  simpl.
+  apply perm_skip.
+  rewrite app_nil_r.
+  apply Permutation_cons_app.
+  apply Permutation_app_comm.
+Qed.  
+  
 (** **** Exercise: 2 stars, standard (not_a_permutation)
 
     Prove that [[1;1]] is not a permutation of [[1;2]].
@@ -548,8 +555,12 @@ Check Permutation_length_1_inv.
 Example not_a_permutation:
   ~ Permutation [1;1] [1;2].
 Proof.
-(* FILL IN HERE *) Admitted.
-(** [] *)
+  unfold not.
+  intros.
+  apply Permutation_cons_inv in H.
+  apply Permutation_length_1_inv in H.
+  inversion H.
+Qed.  
 
 (* ================================================================= *)
 (** ** Correctness of [maybe_swap] *)
@@ -610,12 +621,26 @@ Ltac inv H := inversion H; clear H; subst.
     decide what to induct on: [al], [bl], [Permutation al bl], and
     [Forall f al] are possibilities. *)
 
+Search Forall.
+
 Theorem Forall_perm: forall {A} (f: A -> Prop) al bl,
   Permutation al bl ->
   Forall f al -> Forall f bl.
 Proof.
-  (* FILL IN HERE *) Admitted.
-(** [] *)
+  intros A f al bl perm.
+  induction perm.
+  - intros. assumption.
+  - intros.
+    constructor.
+    apply Forall_inv in H. assumption.
+    apply Forall_inv_tail in H. apply IHperm in H. assumption.
+  - intros.
+    constructor. apply Forall_inv_tail in H. apply Forall_inv in H. assumption.
+    constructor. apply Forall_inv in H. assumption.
+    apply Forall_inv_tail in H. apply Forall_inv_tail in H. assumption.
+  - intros.
+    apply IHperm1 in H. apply IHperm2 in H. assumption.
+Qed.    
 
 (* ################################################################# *)
 (** * Summary: Comparisons and Permutations *)
