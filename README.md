@@ -15,3 +15,4 @@ All exercises are complete except a few questions in IndProp.v, Imp.v, and AltAu
 ## Verified Functional Algorithms 
 
 - [Perm.v](vfa/Perm.v)
+- [Sort.v](vfa/Sort.v) (partial)

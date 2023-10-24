@@ -174,9 +174,19 @@ Lemma insert_sorted:
   forall a l, sorted l -> sorted (insert a l).
 Proof.
   intros a l S. induction S; simpl.
-  (* FILL IN HERE *) Admitted.
-
-(** [] *)
+  - constructor.
+  - bdestruct (a <=? x).
+    + constructor. assumption. constructor.
+    + constructor.
+      * unfold gt in H. apply Nat.lt_le_incl. assumption.
+      * constructor.
+  - simpl in IHS. 
+    bdestruct (a <=? x); bdestruct (a <=? y). 
+    + constructor. assumption. constructor. assumption. assumption.
+    + constructor. assumption. constructor. assumption. assumption.
+    + constructor. unfold gt in H0. apply Nat.lt_le_incl. assumption. assumption.
+    + constructor. assumption. assumption.
+Qed.      
 
 (** **** Exercise: 2 stars, standard (sort_sorted) *)
 
@@ -185,9 +195,10 @@ Proof.
 
 Theorem sort_sorted: forall l, sorted (sort l).
 Proof.
-  (* FILL IN HERE *) Admitted.
-
-(** [] *)
+  intros. induction l.
+  - simpl. constructor.
+  - simpl. apply insert_sorted. assumption.
+Qed.
 
 (** **** Exercise: 3 stars, standard (insert_perm) *)
 
@@ -197,9 +208,17 @@ Proof.
 Lemma insert_perm: forall x l,
     Permutation (x :: l) (insert x l).
 Proof.
-  (* FILL IN HERE *) Admitted.
-
-(** [] *)
+  intros.
+  induction l.
+  - simpl. repeat constructor.
+  - simpl.
+    bdestruct (x <=? a).
+    + apply Permutation_refl.
+    + apply perm_skip with _ a _ _ in IHl.
+      apply Permutation_trans with (a :: x :: l).
+      * constructor.
+      * assumption.
+Qed.        
 
 (** **** Exercise: 3 stars, standard (sort_perm) *)
 
@@ -207,9 +226,15 @@ Proof.
 
 Theorem sort_perm: forall l, Permutation l (sort l).
 Proof.
-(* FILL IN HERE *) Admitted.
-
-(** [] *)
+  intros.
+  induction l.
+  - simpl. constructor.
+  - simpl. 
+    apply perm_skip with _ a _ _ in IHl.
+    apply Permutation_trans with (a :: sort l).
+    + assumption.
+    + apply insert_perm.
+Qed.      
 
 (** **** Exercise: 1 star, standard (insertion_sort_correct) *)
 
@@ -218,9 +243,11 @@ Proof.
 Theorem insertion_sort_correct:
     is_a_sorting_algorithm sort.
 Proof.
-  (* FILL IN HERE *) Admitted.
-
-(** [] *)
+  unfold is_a_sorting_algorithm. intros.
+  split.
+  apply sort_perm.
+  apply sort_sorted.
+Qed.  
 
 (* ################################################################# *)
 (** * Validating the Specification (Advanced) *)
@@ -234,7 +261,22 @@ Proof.
     But one way to build confidence in a specification is to state it
     in two different ways, then prove they are equivalent. *)
 
+(* Lemma cons_err: forall l n x i iv, nth_error l i = Some iv -> nth_error (x :: l ) (i *) 
+
+Lemma nth_single: forall (X: Type) (x: X) i iv, nth_error [x] i = Some iv -> i = 0.
+Proof.
+  intros.
+  destruct i.
+  - reflexivity.
+  - inversion H.
+    assert (H': @nth_error X [] i <> None).
+    { unfold not. intros. congruence. }
+    apply nth_error_Some in H'.
+    inversion H'.
+Qed.
+
 (** **** Exercise: 4 stars, advanced (sorted_sorted') *)
+
 Lemma sorted_sorted': forall al, sorted al -> sorted' al.
 
 (** Hint: Instead of doing induction on the list [al], do induction on
@@ -242,17 +284,50 @@ Lemma sorted_sorted': forall al, sorted al -> sorted' al.
     have to think about how to approach it, and try out one or two
     different ideas.*)
 Proof.
-(* FILL IN HERE *) Admitted.
-(** [] *)
+Admitted.
 
 (** **** Exercise: 3 stars, advanced (sorted'_sorted) *)
+
+Lemma nth_empty: forall (X: Type) i iv, ~(@nth_error X [] i = Some iv).
+Proof.
+  unfold not. intros.
+  induction i.
+  - inversion H.
+  - simpl in H. inversion H.
+Qed.
+
+Lemma rm_sorted': forall hd tl, sorted' (hd :: tl) -> sorted' tl.
+  intros.
+  unfold sorted'.
+  intros.
+  unfold sorted' in H.
+  specialize H with (S i) (S j) iv jv.
+  apply H.
+  + lia.
+  + simpl. assumption.
+  + simpl. assumption.
+Qed.    
+
 Lemma sorted'_sorted : forall al, sorted' al -> sorted al.
 Proof.
+  intros.
+  induction al.
+  - constructor.
+  - destruct al.
+    + constructor.
+    + constructor.
+      * unfold sorted' in H.
+        specialize H with 0 1 a n.
+        apply H.
+        ** lia.
+        ** reflexivity.
+        ** reflexivity.
+      * apply IHal. apply rm_sorted' in H. assumption.
+Qed.
+        
 (** Here, you can't do induction on the sortedness of the list,
     because [sorted'] is not an inductive predicate. But the proof
     is less tricky than the previous. *)
-(* FILL IN HERE *) Admitted.
-(** [] *)
 
 (* ################################################################# *)
 (** * Proving Correctness from the Alternative Spec (Optional) *)
